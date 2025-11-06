@@ -11,7 +11,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-storage-compat.js"></script>
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
@@ -27,24 +26,6 @@
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
-        /* OTIMIZAÇÃO MOBILE: Remove sombra e arredondamento nas bordas em telas pequenas para se parecer com um app */
-        @media (max-width: 767px) {
-            .container {
-                padding: 15px; 
-                box-shadow: none; 
-                margin-top: 0;
-                margin-bottom: 0;
-                border-radius: 0;
-            }
-            .row > div[class*="col-"] {
-                margin-bottom: 15px; 
-            }
-            /* Ajusta a fonte do título em mobile */
-            .text-start h2 {
-                font-size: 1.5rem !important;
-            }
-        }
-
         .nav-tabs .nav-link {
             font-weight: bold;
             color: #495057;
@@ -109,24 +90,28 @@
 </head>
 <body>
 
-    <div class="container"> 
-        <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-start align-items-md-center mb-4 pb-2 border-bottom">
-            
-            <div class="text-start mb-3 mb-md-0">
-                <h2 class="text-primary" style="margin-bottom: 0;">Gerador de Relatório Individual</h2>
-                <p class="text-muted" style="font-size: 0.9em; margin-bottom: 0;">Ferramenta para Educação Infantil e Ensino Fundamental I</p>
-            </div>
-            
-            <button id="logoutButton" class="btn btn-danger btn-sm align-self-end align-self-md-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-box-arrow-right me-1" viewBox="0 0 16 16">
-                    <path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1-.5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 1 3.5v9A1.5 1.5 0 0 0 2.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/>
-                    <path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/>
-                </svg>
-                Sair
-            </button>
-            
+    <div class="container">
+        <div class="container"> 
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        
+        <div class="text-start">
+            <h2 class="text-primary" style="margin-bottom: 0;">Gerador de Relatório Individual</h2>
+            <p class="text-muted" style="font-size: 0.9em; margin-bottom: 0;">Ferramenta para Educação Infantil e Ensino Fundamental I</p>
         </div>
         
+        <button id="logoutButton" class="btn btn-danger align-self-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-box-arrow-right me-1" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1-.5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 1 3.5v9A1.5 1.5 0 0 0 2.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/>
+                <path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/>
+            </svg>
+            Sair
+        </button>
+        
+    </div>
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+      
+     
+
         <ul class="nav nav-tabs" id="myTab" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="create-tab" data-bs-toggle="tab" data-bs-target="#create-tab-pane" type="button" role="tab" aria-controls="create-tab-pane" aria-selected="true">✍️ Criar Relatório</button>
@@ -143,13 +128,13 @@
                     
                     <h5 class="mt-3 mb-3 text-secondary">1. Configuração da Escola (Salva Automaticamente)</h5>
                     <div class="row mb-3">
-                        <div class="col-12 col-md-4 order-md-1 mb-3 mb-md-0">
-                            <input type="text" class="form-control" id="schoolName" placeholder="Escola Traços e Letras" required disabled aria-label="Nome da Escola" title="Campo editável apenas por Coordenadores/Admin">
+                        <div class="col-md-4">
+                            <input type="text" class="form-control" id="schoolName" placeholder="Escola Traços e Letras" required disabled>
                         </div>
-                        <div class="col-12 col-md-4 order-md-2 mb-3 mb-md-0">
-                            <input type="text" class="form-control" id="schoolAddress" placeholder="Catu/Ba" required disabled aria-label="Endereço da Escola" title="Campo editável apenas por Coordenadores/Admin">
+                        <div class="col-md-4">
+                            <input type="text" class="form-control" id="schoolAddress" placeholder="Catu/Ba" required disabled>
                         </div>
-                        <div class="col-12 col-md-4 order-md-3">
+                        <div class="col-md-4">
                             <div class="logo-upload-box" onclick="document.getElementById('logoUpload').click()">
                                 <input type="file" id="logoUpload" accept="image/*" style="display: none;">
                                 <img id="logoPreview" class="logo-preview" alt="Pré-visualização da Logo">
@@ -159,39 +144,39 @@
                         </div>
                     </div>
                     <div class="row mb-4">
-                        <div class="col-12 col-md-6 mb-3 mb-md-0">
-                            <input type="text" class="form-control" id="schoolPhone" placeholder=" (71) 98200-2432" required disabled aria-label="Telefone da Escola" title="Campo editável apenas por Coordenadores/Admin">
+                        <div class="col-md-6">
+                            <input type="text" class="form-control" id="schoolPhone" placeholder=" (71) 98200-2432" required disabled>
                         </div>
-                        <div class="col-12 col-md-6">
-                            <input type="text" class="form-control" id="schoolWebsite" placeholder="www.portaltracoseletras.com.br" required disabled aria-label="Site da Escola" title="Campo editável apenas por Coordenadores/Admin">
+                        <div class="col-md-6">
+                            <input type="text" class="form-control" id="schoolWebsite" placeholder="www.portaltracoseletras.com.br" required disabled>
                         </div>
                     </div>
 
                     <h5 class="mt-3 mb-3 text-secondary">2. Informações do Aluno/Professor</h5>
                     <div class="row mb-3">
-                        <div class="col-12 col-md-6 mb-3 mb-md-0">
+                        <div class="col-md-6">
                             <label for="studentName" class="form-label required">Nome Completo do Aluno(a)</label>
                             <input type="text" class="form-control" id="studentName" required>
                         </div>
-                        <div class="col-6 col-md-3">
+                        <div class="col-md-3">
                             <label for="studentAge" class="form-label required">Idade/Anos</label>
                             <input type="text" class="form-control" id="studentAge" required placeholder="Ex: 4 anos">
                         </div>
-                        <div class="col-6 col-md-3">
+                        <div class="col-md-3">
                             <label for="studentGrade" class="form-label required">Série/Turma</label>
                             <input type="text" class="form-control" id="studentGrade" required placeholder="Ex: Infantil III">
                         </div>
                     </div>
                     <div class="row mb-4">
-                        <div class="col-12 col-md-4 mb-3 mb-md-0">
+                        <div class="col-md-4">
                             <label for="schoolYear" class="form-label required">Ano Letivo/Semestre</label>
                             <input type="text" class="form-control" id="schoolYear" required placeholder="Ex: 2024 / I Semestre">
                         </div>
-                        <div class="col-12 col-md-4 mb-3 mb-md-0">
+                        <div class="col-md-4">
                             <label for="teacherName" class="form-label required">Nome do Professor(a)</label>
                             <input type="text" class="form-control" id="teacherName" required>
                         </div>
-                        <div class="col-12 col-md-4">
+                        <div class="col-md-4">
                             <label for="digitalSignatureText" class="form-label">Texto da Assinatura Digital (Ex: Matrícula, A. Profissional)</label>
                             <input type="text" class="form-control" id="digitalSignatureText" placeholder="Ex: Matrícula 12345/BA">
                         </div>
@@ -255,14 +240,14 @@
                 <h5 class="mt-3 mb-3 text-secondary">Relatórios Salvos no Servidor Firebase</h5>
 
                 <div class="row mb-3 align-items-center">
-                    <div class="col-12 col-md-8 mb-3 mb-md-0">
+                    <div class="col-md-8">
                         <div class="input-group">
                             <input type="text" class="form-control" id="searchStudent" placeholder="Buscar por Nome do Aluno ou Série">
-                            <button class="btn btn-outline-secondary" type="button" id="searchButton" title="Buscar">🔎</button>
-                            <button class="btn btn-outline-secondary" type="button" id="clearSearch" title="Limpar Busca">❌</button>
+                            <button class="btn btn-outline-secondary" type="button" id="searchButton">🔎 Buscar</button>
+                            <button class="btn btn-outline-secondary" type="button" id="clearSearch">❌ Limpar</button>
                         </div>
                     </div>
-                    <div class="col-12 col-md-4 text-center text-md-end">
+                    <div class="col-md-4 text-end">
                         <button class="btn btn-danger btn-sm" id="clearAllReports" style="display: none;" title="Apaga TODOS os relatórios salvos. Cuidado!">🚨 Apagar Tudo</button>
                     </div>
                 </div>
@@ -273,9 +258,7 @@
                 <p id="noReportsMessage" class="text-center text-muted mt-4" style="display: none;">Nenhum relatório salvo ainda. Use o botão "Salvar Relatório" na aba anterior!</p>
             </div>
 
-        </div> 
-        <p class="text-center mt-5 text-muted"><small>Desenvolvido por Nay como recurso de apoio pedagógico.
-        </small></p>
+        </div> <p class="text-center mt-5 text-muted"><small>Desenvolvido por Nay como ferramenta de apoio pedagógico.</small></p>
 
     </div> 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
@@ -436,8 +419,8 @@ async function updateSchoolConfigFromForm() {
     const logoPreview = document.getElementById('logoPreview');
     // Usa o src da preview, que pode ser Base64 ou vazio
     const logoData = logoPreview.style.display !== 'none' && logoPreview.src.startsWith('data:image') 
-                             ? logoPreview.src 
-                             : ''; 
+                                 ? logoPreview.src 
+                                 : ''; 
     await saveSchoolConfig(
         document.getElementById('schoolName').value,
         logoData,
@@ -486,21 +469,21 @@ async function handleLogoUpload() {
 
 
 // ==========================================================
-// 4. FUNÇÕES DE RELATÓRIO (GET, SET, SAVE, LIST)
+// 4. FUNÇÕES DE RELATÓRIO (GET, SET, SAVE, LIST - CORRIGIDAS)
 // ==========================================================
 
 function getReportDataFromForm() {
     const logoPreview = document.getElementById('logoPreview');
     const logoData = logoPreview.style.display !== 'none' && logoPreview.src.startsWith('data:image') 
-                             ? logoPreview.src 
-                             : ''; 
+                                 ? logoPreview.src 
+                                 : ''; 
 
     const reportData = {
         // Info da Escola (Campos desabilitados, mas lidos para o PDF)
         schoolName: document.getElementById('schoolName').value,
         schoolAddress: document.getElementById('schoolAddress').value, 
-        schoolPhone: document.getElementById('schoolPhone').value, 
-        schoolWebsite: document.getElementById('schoolWebsite').value, 
+        schoolPhone: document.getElementById('schoolPhone').value,       
+        schoolWebsite: document.getElementById('schoolWebsite').value,   
         logoBase64: logoData, // Inclui a logo Base64
 
         // Info do Aluno/Professor/Relatório
@@ -529,8 +512,8 @@ function getReportDataFromForm() {
     
 function validateForm() {
     const requiredFields = [
-          'studentName', 'studentAge', 
-          'studentGrade', 'schoolYear', 'teacherName', 'schoolName'
+         'studentName', 'studentAge', 
+         'studentGrade', 'schoolYear', 'teacherName', 'schoolName'
     ];
     
     let isValid = true;
@@ -550,82 +533,21 @@ function validateForm() {
     return isValid;
 }
 
-function createReportListItem(report) {
-    const timestampText = report.data_atualizacao ? 
-        new Date(report.data_atualizacao.toDate()).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 
-        'Data Desconhecida';
-        
-    const item = document.createElement('div');
-    item.className = 'report-item';
-    item.dataset.id = report.id;
-    item.innerHTML = `
-        <div style="flex-grow: 1;">
-            <strong class="text-primary">${report.studentName}</strong> 
-            <small class="text-muted">(${report.studentGrade || 'S/ Turma'})</small>
-            <br>
-            <small class="text-secondary">Última atualização: ${timestampText}</small>
-        </div>
-        <div>
-            <button class="btn btn-sm btn-info text-white me-2 load-report-btn" data-id="${report.id}" title="Carregar para Edição">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil-square" viewBox="0 0 16 16">
-                  <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.642a.5.5 0 0 1 .707 0l1.293 1.294zm-2.5 4.394-2-2L4.254 13.04a.5.5 0 0 0 .144.148l8.36 1.832a.5.5 0 0 0 .58-.456V6.334z"/>
-                </svg>
-            </button>
-            <button class="btn btn-sm btn-danger delete-report-btn" data-id="${report.id}" title="Apagar Permanentemente">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
-                  <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-                  <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h9.5a1 1 0 0 1 1 1v1zM4 4h8v9a1 1 0 0 0 1-1V5H3v8a1 1 0 0 0 1-1V4zM12 4H4V3h8v1z"/>
-                </svg>
-            </button>
-        </div>
-    `;
-    return item;
-}
-
-function updateSavedReportsDisplay(reportsToDisplay) {
-    const list = document.getElementById('savedReportsList');
-    const countSpan = document.getElementById('savedReportsCount');
-    const noReportsMessage = document.getElementById('noReportsMessage');
-
-    list.innerHTML = ''; // Limpa a lista atual
-    countSpan.textContent = relatoriosCache.length; // Conta no total
-    
-    if (reportsToDisplay.length === 0) {
-        noReportsMessage.style.display = 'block';
-    } else {
-        noReportsMessage.style.display = 'none';
-        reportsToDisplay.forEach(report => {
-            list.appendChild(createReportListItem(report));
-        });
-    }
-    
-    // Adiciona Listeners aos botões gerados dinamicamente
-    list.querySelectorAll('.load-report-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const reportId = e.currentTarget.dataset.id;
-            const report = relatoriosCache.find(r => r.id === reportId);
-            if (report) fillFormWithReport(report);
-        });
-    });
-
-    list.querySelectorAll('.delete-report-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const reportId = e.currentTarget.dataset.id;
-            deleteReport(reportId);
-        });
-    });
-}
-
+// CORREÇÃO CRÍTICA: LÓGICA DE FILTRAGEM E ATUALIZAÇÃO DO DISPLAY
 async function getAndCacheReports() {
     if (!auth.currentUser) return;
 
     let query = reportsCollection;
     
+    // VERIFICA SE É COORDENADOR/ADMIN PARA EXECUTAR A CONSULTA COMPLETA
     if (isCoordinator) {
         // Coordenador: Vê todos, ordenados por nome do aluno.
+        // ATENÇÃO: Se esta consulta falhar, você precisará CRIAR um índice 'studentName' no Firebase.
         query = query.orderBy('studentName', 'asc');
     } else {
         // Professor: Vê apenas os dele.
+        // FILTRO PELO ID do professor autenticado.
+        // Ordena pela data de atualização (mais recente primeiro) - Consulta simples, evita erro de índice composto.
         query = query
             .where('professor_id', '==', auth.currentUser.uid)
             .orderBy('data_atualizacao', 'desc');
@@ -637,12 +559,13 @@ async function getAndCacheReports() {
         snapshot.forEach(doc => {
             relatoriosCache.push({ id: doc.id, ...doc.data() });
         });
+        console.log(`Relatórios carregados para o cache: ${relatoriosCache.length}`);
         
-        // Atualiza a lista com o cache completo (antes da busca)
+        // CORREÇÃO: Chama a atualização da interface AQUI após o carregamento bem-sucedido
         updateSavedReportsDisplay(relatoriosCache);
         
     } catch (e) {
-        console.error("Erro ao carregar relatórios do Firestore:", e);
+        console.error("Erro ao carregar relatórios do Firestore. Possível falta de Índice Composto: ", e);
         document.getElementById('savedReportsCount').textContent = 'ERRO';
         document.getElementById('noReportsMessage').textContent = 'Erro ao carregar relatórios. Verifique o console do navegador e os índices/regras do Firebase.';
         document.getElementById('noReportsMessage').style.display = 'block';
@@ -658,7 +581,7 @@ async function saveReportToFirebase() {
     
     // Metadados do Firebase
     reportData.professor_id = auth.currentUser.uid; 
-    reportData.data_atualizacao = firebase.firestore.FieldValue.serverTimestamp(); 
+    reportData.data_atualizacao = firebase.firestore.FieldValue.serverTimestamp(); // Campo usado na ordenação corrigida
     reportData.timestamp = new Date().toLocaleString('pt-BR'); 
 
     // Padroniza a turma
@@ -679,57 +602,14 @@ async function saveReportToFirebase() {
             alert(`Relatório do(a) aluno(a) ${reportData.studentName} salvo com sucesso no servidor!`);
         }
         
-        await getAndCacheReports(); // Recarrega a lista
+        // Recarrega apenas os relatórios visíveis para o usuário atual e atualiza a lista
+        await getAndCacheReports();
         
         return docId;
 
     } catch (e) {
         console.error("Erro ao salvar relatório no Firebase: ", e);
         alert("Erro ao salvar relatório. Verifique sua conexão e permissões do Firebase/Firestore.");
-    }
-}
-
-async function deleteReport(reportId) {
-    if (!confirm("Tem certeza que deseja apagar permanentemente este relatório? Esta ação não pode ser desfeita.")) return;
-
-    try {
-        await reportsCollection.doc(reportId).delete();
-        alert("Relatório apagado com sucesso.");
-        await getAndCacheReports(); // Recarrega a lista
-        
-        // Se estiver editando o relatório apagado, reseta o formulário
-        if (document.getElementById('saveReport').dataset.id === reportId) {
-            document.getElementById('reportForm').reset();
-            document.getElementById('saveReport').dataset.id = '';
-            applySavedLogo(await loadSchoolConfig()); // Recarrega a logo da config padrão
-        }
-
-    } catch (e) {
-        console.error("Erro ao apagar relatório:", e);
-        alert("Erro ao apagar relatório. Verifique sua conexão e permissões.");
-    }
-}
-
-async function clearAllReports() {
-    if (!isCoordinator) return;
-    if (!confirm("ALERTA MÁXIMO: Você está prestes a APAGAR TODOS OS RELATÓRIOS salvos por TODOS os professores. Deseja continuar?")) return;
-
-    try {
-        // Obter todos os documentos
-        const snapshot = await reportsCollection.get();
-        const batch = db.batch();
-
-        snapshot.forEach((doc) => {
-            batch.delete(reportsCollection.doc(doc.id));
-        });
-
-        await batch.commit();
-        alert(`Todos os ${snapshot.size} relatórios foram apagados com sucesso.`);
-        await getAndCacheReports();
-
-    } catch (e) {
-        console.error("Erro ao apagar todos os relatórios:", e);
-        alert("Erro ao apagar todos os relatórios. Verifique o console.");
     }
 }
 
@@ -769,281 +649,448 @@ async function fillFormWithReport(report) {
     alert(`Relatório do(a) aluno(a) ${report.studentName} carregado para edição. Lembre-se de clicar em "Salvar Relatório" para manter as alterações.`);
 }
 
-function filterReports(searchTerm) {
-    const term = searchTerm.toLowerCase().trim();
-    if (!term) {
-        updateSavedReportsDisplay(relatoriosCache);
+// CORREÇÃO CRÍTICA: LÓGICA DE PERMISSÃO PARA EXCLUSÃO
+async function deleteReport(id) {
+    if (!auth.currentUser) return;
+    
+    const reportToDelete = relatoriosCache.find(r => r.id === id);
+    if (!reportToDelete) {
+        alert("Relatório não encontrado.");
         return;
     }
-    
-    const filtered = relatoriosCache.filter(report => {
-        const name = report.studentName ? report.studentName.toLowerCase() : '';
-        const grade = report.studentGrade ? report.studentGrade.toLowerCase() : '';
-        return name.includes(term) || grade.includes(term);
-    });
-    
-    updateSavedReportsDisplay(filtered);
-}
 
-function loadAppContent() {
-    // 1. Carrega as configurações da escola e a logo
-    loadSchoolConfig(); 
+    // Checagem de Permissão: Coordenador/Admin PODE OU o criador do relatório PODE.
+    const isOwner = reportToDelete.professor_id === auth.currentUser.uid;
     
-    // 2. Carrega e exibe a lista de relatórios
-    getAndCacheReports();
-}
-
-// ==========================================================
-// 5. LÓGICA DE GERAÇÃO E RENDERIZAÇÃO DE PDF (OTIMIZADA PARA MOBILE)
-// ==========================================================
-
-// Função CRÍTICA: Cria o HTML limpo e formatado do relatório (o que será transformado em PDF)
-function generateReportHTML(data) {
-    // 1. Cria o contêiner principal do PDF com estilos básicos de relatório
-    const reportContainer = document.createElement('div');
-    // ID temporário para a captura
-    reportContainer.id = 'relatorio-pronto-para-pdf'; 
-    // Estilos internos essenciais para layout do PDF
-    reportContainer.style.padding = '20mm'; 
-    reportContainer.style.fontFamily = 'Arial, sans-serif';
-    reportContainer.style.fontSize = '12pt';
-    reportContainer.style.color = '#333';
-    reportContainer.style.lineHeight = '1.5';
-
-    // 2. Cabeçalho (Logo e Info da Escola)
-    let headerHTML = `
-        <div style="border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
-            <div style="flex-grow: 1;">
-                <h1 style="font-size: 16pt; color: #007bff; margin: 0;">Relatório Individual de Avaliação Descritiva</h1>
-                <p style="font-size: 10pt; margin: 0; color: #555;">${data.schoolYear} - ${data.studentGrade}</p>
-                <p style="font-size: 10pt; margin: 0; color: #555;">${data.schoolName} - ${data.schoolAddress}</p>
-                <p style="font-size: 10pt; margin: 0; color: #555;">${data.schoolPhone} | ${data.schoolWebsite}</p>
-            </div>
-    `;
-    if (data.logoBase64) {
-        // Reduz o tamanho da imagem no PDF para evitar estouro em páginas A4
-        headerHTML += `<img src="${data.logoBase64}" style="max-height: 80px; width: auto; margin-left: 20px;">`;
-    }
-    headerHTML += `</div>`;
-    reportContainer.innerHTML = headerHTML;
-    
-    // 3. Informações do Aluno
-    reportContainer.innerHTML += `
-        <div style="margin-bottom: 30px; border: 1px solid #ddd; padding: 15px; border-radius: 5px;">
-            <h2 style="font-size: 14pt; color: #212529; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top: 0;">Informações do Aluno</h2>
-            <p style="margin: 5px 0;"><strong>Nome do Aluno:</strong> ${data.studentName}</p>
-            <p style="margin: 5px 0;"><strong>Idade/Anos:</strong> ${data.studentAge}</p>
-            <p style="margin: 5px 0;"><strong>Professor(a):</strong> ${data.teacherName}</p>
-        </div>
-    `;
-
-    // 4. Seções de Desenvolvimento (Campos de Experiência)
-    const sectionTitleStyle = "font-size: 13pt; color: #28a745; margin-top: 20px; border-bottom: 1px dashed #28a745; padding-bottom: 3px;";
-    
-    const developmentFields = [
-        { label: "O Eu, O Outro e o Nós", dataKey: 'devEuOutroNos' },
-        { label: "Escuta, Fala, Pensamento e Imaginação", dataKey: 'devEscutaFala' },
-        { label: "Espaço, Tempo, Quantidade, Relações e Transformações", dataKey: 'devEspacoTempo' },
-        { label: "Corpo, Gesto e Movimento", dataKey: 'devCorpoGesto' },
-        { label: "Traços, Sons, Cores e Formas", dataKey: 'devTracosSons' }
-    ];
-
-    developmentFields.forEach(field => {
-        if (data[field.dataKey] && data[field.dataKey].trim()) {
-            reportContainer.innerHTML += `
-                <h3 style="${sectionTitleStyle}">${field.label}</h3>
-                <p style="text-align: justify; margin-top: 10px; white-space: pre-wrap;">${data[field.dataKey]}</p>
-            `;
-        }
-    });
-    
-    // 5. Observações/Recomendações
-    if (data.improvements && data.improvements.trim()) {
-        reportContainer.innerHTML += `
-            <h3 style="font-size: 13pt; color: #ffc107; margin-top: 30px; border-bottom: 1px dashed #ffc107; padding-bottom: 3px;">Áreas que Necessitam de Maior Atenção e Apoio (Recomendações)</h3>
-            <p style="text-align: justify; margin-top: 10px; white-space: pre-wrap;">${data.improvements}</p>
-        `;
+    // Permissão negada se NÃO for coordenador E NÃO for o dono
+    if (!isCoordinator && !isOwner) {
+         alert("Permissão negada. Apenas o(a) professor(a) criador(a) ou a Coordenadoria podem excluir este relatório.");
+         return;
     }
     
-    if (data.generalObservations && data.generalObservations.trim()) {
-        reportContainer.innerHTML += `
-            <h3 style="font-size: 13pt; color: #6c757d; margin-top: 30px; border-bottom: 1px dashed #6c757d; padding-bottom: 3px;">Observações Gerais</h3>
-            <p style="text-align: justify; margin-top: 10px; white-space: pre-wrap;">${data.generalObservations}</p>
-        `;
-    }
-    
-    // 6. Rodapé e Assinatura
-    const date = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
-    reportContainer.innerHTML += `
-        <div style="margin-top: 50px; text-align: center;">
-            <p style="margin-bottom: 40px; font-size: 11pt;">Catu/BA, ${date}</p>
+    if (confirm('Tem certeza que deseja EXCLUIR este relatório? Esta ação é irreversível!')) {
+        try {
+            await reportsCollection.doc(id).delete();
+            alert('Relatório excluído do Firebase com sucesso!');
             
-            <div style="display: flex; justify-content: space-around; font-size: 11pt;">
-                <div style="width: 40%; text-align: center;">
-                    <hr style="border-top: 1px solid #333; margin-bottom: 5px;">
-                    <p style="margin: 0;"><strong>${data.teacherName}</strong></p>
-                    <p style="margin: 0; font-size: 10pt; color: #555;">Professor(a) - ${data.digitalSignatureText}</p>
-                </div>
-                <div style="width: 40%; text-align: center;">
-                    <hr style="border-top: 1px solid #333; margin-bottom: 5px;">
-                    <p style="margin: 0;">Assinatura do Coordenador(a)</p>
-                </div>
-            </div>
-        </div>
-    `;
-
-    return reportContainer;
-}
-
-const { jsPDF } = window.jspdf;
-/**
- * Gera um PDF otimizado para dispositivos móveis a partir de um elemento HTML.
- * @param {HTMLElement} elemento - O elemento HTML que contém o relatório.
- * @param {string} filename - O nome do arquivo PDF a ser salvo.
- */
-function gerarRelatorioPDF(elemento, filename = 'Relatorio_Gerado.pdf') {
-    // 1. Prepara o elemento para captura fora da tela visível
-    elemento.style.position = 'absolute';
-    elemento.style.top = '-9999px';
-    document.body.appendChild(elemento);
-
-    const options = {
-        // Fator de escala aumentado para 2.5 para alta qualidade (essencial em telas de celular)
-        scale: 2.5, 
-        width: elemento.offsetWidth, 
-        windowHeight: elemento.scrollHeight, 
-        scrollY: -window.scrollY // Desliga a rolagem de tela durante a captura
-    };
-    
-    // 2. Captura o HTML para um Canvas (Imagem)
-    html2canvas(elemento, options).then(canvas => {
-        const imgData = canvas.toDataURL('image/jpeg', 1.0);
-        
-        // 3. Cria o objeto PDF
-        const pdf = new jsPDF('p', 'mm', 'a4'); 
-        
-        const pdfWidth = pdf.internal.pageSize.getWidth(); 
-        const pdfHeight = pdf.internal.pageSize.getHeight(); 
-        
-        const imgWidth = canvas.width;
-        const imgHeight = canvas.height;
-        
-        // Calcula a altura da imagem ajustada à largura do PDF (mantendo a proporção)
-        let targetHeight = (imgHeight * pdfWidth) / imgWidth;
-        
-        let position = 0; 
-        let heightLeft = targetHeight;
-        
-        // 4. Adiciona a imagem no PDF (com suporte a múltiplas páginas)
-        while (heightLeft >= 0) {
-            pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, targetHeight);
+            await getAndCacheReports();
             
-            heightLeft -= pdfHeight; 
-            
-            if (heightLeft >= 0) {
-                pdf.addPage();
-                // A posição deve ser negativa, movendo a "visão" do PDF para o próximo bloco do canvas
-                position = - (targetHeight - heightLeft); 
+            if (document.getElementById('saveReport').dataset.id === id) {
+                 clearForm();
             }
+            
+        } catch (e) {
+            console.error("Erro ao excluir relatório no Firebase: ", e);
+            alert("Erro ao excluir relatório. Verifique sua conexão e permissões do Firebase.");
         }
+    }
+}
+    
+// NOVO: Atualiza a exibição da lista de relatórios (Agora com controle de exclusão)
+function updateSavedReportsDisplay(reportsArray = relatoriosCache) {
+    const listContainer = document.getElementById('savedReportsList');
+    const countSpan = document.getElementById('savedReportsCount');
+    const noReportsMessage = document.getElementById('noReportsMessage');
+    listContainer.innerHTML = ''; 
+    
+    const finalArray = reportsArray || relatoriosCache; 
+
+    if (finalArray.length === 0) {
+        noReportsMessage.style.display = 'block';
+        noReportsMessage.textContent = 'Nenhum relatório salvo ainda. Use o botão "Salvar Relatório" na aba anterior!';
+    } else {
+        noReportsMessage.style.display = 'none';
         
-        // 5. Salva o arquivo
-        pdf.save(filename);
+        finalArray.forEach(report => {
+            const item = document.createElement('div');
+            item.className = 'report-item';
+            
+            // Lógica de Permissão de Exclusão: Coordenador/Admin PODE OU É O CRIADOR
+            const canDelete = isCoordinator || (report.professor_id === auth.currentUser?.uid);
+            
+            const deleteButtonHtml = canDelete
+                ? `<button class="btn btn-sm btn-danger delete-btn" data-id="${report.id}" title="Excluir Relatório">🗑️ Excluir</button>`
+                : `<button class="btn btn-sm btn-secondary disabled" title="Permissão negada (Apenas criador ou Coordenador)">🔒 Excluir</button>`;
+                
+            item.innerHTML = `
+                <div>
+                    <strong>${report.studentName}</strong> - ${report.studentGrade}<br>
+                    <small class="text-muted">Salvo em: ${report.timestamp}</small>
+                </div>
+                <div>
+                    <button class="btn btn-sm btn-info me-2 edit-btn" data-id="${report.id}" title="Carregar para Edição/PDF">✏️ Editar</button>
+                    ${deleteButtonHtml}
+                </div>
+            `;
+            listContainer.appendChild(item);
+        });
         
-        // 6. Limpeza e Restauração
-        document.body.removeChild(elemento);
-        
-        alert(`PDF "${filename}" gerado com sucesso!`);
-    }).catch(error => {
-        document.body.removeChild(elemento);
-        console.error("Erro na geração do PDF:", error);
-        alert("Erro na geração do PDF. Tente novamente ou verifique se o seu relatório está muito extenso.");
-    });
+        // Adiciona listeners para os botões recém-criados
+        listContainer.querySelectorAll('.edit-btn').forEach(button => {
+            button.addEventListener('click', async (e) => {
+                const reportId = e.currentTarget.dataset.id;
+                const reportToEdit = relatoriosCache.find(r => r.id === reportId);
+                if (reportToEdit) {
+                    fillFormWithReport(reportToEdit);
+                }
+            });
+        });
+
+        // Adiciona listeners APENAS aos botões de exclusão que NÃO estão desabilitados
+        listContainer.querySelectorAll('.delete-btn:not(.disabled)').forEach(button => {
+            button.addEventListener('click', (e) => {
+                deleteReport(e.currentTarget.dataset.id);
+            });
+        });
+    }
+
+    countSpan.textContent = finalArray.length;
 }
 
+async function clearAllReports() {
+    if (!isCoordinator) { 
+        alert("Você não tem permissão para limpar todos os relatórios.");
+        return; 
+    }
+    
+    if (confirm("ATENÇÃO: Você tem certeza que deseja excluir TODOS os relatórios salvos? Esta ação é IRREVERSÍVEL!")) {
+        const batch = db.batch();
+        try {
+            const snapshot = await reportsCollection.get();
+            snapshot.docs.forEach(doc => {
+                batch.delete(doc.ref);
+            });
+            await batch.commit();
+            
+            relatoriosCache = []; // Limpa o cache local
+            updateSavedReportsDisplay([]); 
+            alert('Todos os relatórios foram apagados do Firebase.');
+            clearForm();
+        } catch (e) {
+            console.error("Erro ao limpar relatórios do Firebase: ", e);
+            alert("Erro ao limpar relatórios. Verifique sua conexão e permissões do Firebase.");
+        }
+    }
+}
+        
+function handleSearchReports() {
+    if (!auth.currentUser) return;
+    const searchTerm = document.getElementById('searchStudent').value.toLowerCase().trim();
+    const allReports = relatoriosCache; 
+    
+    if (searchTerm === '') {
+        updateSavedReportsDisplay(allReports);
+        return;
+    }
+
+    const filteredReports = allReports.filter(report => 
+        report.studentName.toLowerCase().includes(searchTerm) || 
+        report.studentGrade.toLowerCase().includes(searchTerm)
+    );
+
+    updateSavedReportsDisplay(filteredReports); 
+}
+
+async function clearForm() {
+    document.getElementById('saveReport').dataset.id = 'NEW_REPORT_ID'; 
+
+    // Limpa apenas os campos do relatório
+    document.getElementById('reportForm').reset();
+    
+    // Recarrega a logo da configuração da escola (para não sumir)
+    const config = await loadSchoolConfig();
+    applySavedLogo(config);
+    
+    alert('Formulário limpo para um novo relatório.');
+}
 
 // ==========================================================
-// 6. EVENT LISTENERS
+// 5. FUNÇÕES DE GERAÇÃO DE PDF
 // ==========================================================
+    
+function formatTextForJsPDF(text) {
+    return text.trim().split('\n').map(line => line.trim());
+}
 
-// Listener de Logout
-document.getElementById('logoutButton').addEventListener('click', () => {
-    auth.signOut().then(() => {
-        window.location.href = 'login.html';
-    }).catch((error) => {
-        console.error("Erro ao fazer logout:", error);
-    });
-});
+async function generatePDFWithJsPDF() {
+    const { jsPDF } = window.jspdf;
+    const data = getReportDataFromForm();
 
-// Listener de Geração de PDF
-document.getElementById('generateReport').addEventListener('click', () => {
     if (!validateForm()) {
         return;
     }
     
-    const reportData = getReportDataFromForm();
-    const reportElement = generateReportHTML(reportData);
+    const doc = new jsPDF({
+        unit: 'mm',
+        format: 'a4',
+        orientation: 'portrait'
+    });
+
+    const marginX = 30; 
+    const contentWidth = 210 - 30 - 20; 
+    const maxPageY = 297 - 20; 
+    let currentY = 30; 
+
+    doc.setFont('times', 'normal');
+    doc.setFontSize(12);
+    doc.setTextColor(51, 51, 51); 
+
+    const checkPageBreak = (heightNeeded) => {
+        if (currentY + heightNeeded >= maxPageY) {
+            doc.addPage();
+            currentY = 30; 
+            doc.setFont('times', 'normal'); 
+            doc.setFontSize(12);
+            doc.setTextColor(51, 51, 51);
+        }
+    };
     
-    // Nome do arquivo limpo
-    const studentNameClean = reportData.studentName.replace(/[^a-zA-Z0-9_ ]/g, '').slice(0, 30);
-    const gradeClean = reportData.studentGrade.replace(/[^a-zA-Z0-9_ ]/g, '').slice(0, 10);
-    const filename = `${studentNameClean}_${gradeClean}.pdf`.replace(/ /g, '_');
+    const addSectionTitle = (title, size = 12, style = 'bold') => {
+        checkPageBreak(8); 
+        doc.setFont('times', style);
+        doc.setFontSize(size);
+        doc.text(title, 105, currentY, { align: 'center' }); 
+        currentY += 8;
+        doc.setFont('times', 'normal');
+        doc.setFontSize(12);
+    };
+    
+    const addDevelopmentField = (title, content) => {
+        checkPageBreak(8); 
+        
+        doc.setFont('times', 'bold');
+        doc.text(title, marginX, currentY);
+        currentY += 7;
+        doc.setFont('times', 'normal');
 
-    gerarRelatorioPDF(reportElement, filename);
-});
+        const lines = formatTextForJsPDF(content);
+        let finalY = currentY;
 
-// Listener de Salvar Relatório
-document.getElementById('saveReport').addEventListener('click', saveReportToFirebase);
+        if (lines.length > 0 && lines[0].trim() !== '') {
+            const indent = 12.5; 
+            const textWidth = contentWidth - indent;
+            const lineHeight = 1.5;
+            
+            const fullText = lines.join('\n');
+            const splitText = doc.splitTextToSize(fullText, textWidth);
+            
+            const textHeight = splitText.length * doc.getLineHeight() * lineHeight;
+            checkPageBreak(textHeight + 5); 
 
-// Listener de Busca
-document.getElementById('searchButton').addEventListener('click', () => {
-    const searchTerm = document.getElementById('searchStudent').value;
-    filterReports(searchTerm);
-});
+            doc.text(splitText, marginX + indent, currentY, {
+                align: 'justify',
+                maxWidth: textWidth,
+                lineHeightFactor: lineHeight,
+            });
+            
+            finalY = currentY + textHeight;
 
-// Listener de Limpar Busca
-document.getElementById('clearSearch').addEventListener('click', () => {
-    document.getElementById('searchStudent').value = '';
-    filterReports('');
-});
+        } else {
+            doc.text('-', marginX + 12.5, currentY);
+            finalY += 7;
+        }
+        
+        currentY = finalY + 5; 
+    };
 
-// Listener de Busca com Enter
-document.getElementById('searchStudent').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        document.getElementById('searchButton').click();
+
+    // 1. CABEÇALHO
+    const centerX = 105; 
+    const MAX_LOGO_WIDTH = 40;
+    const MAX_LOGO_HEIGHT = 20; 
+    
+    if (data.logoBase64 && data.logoBase64.startsWith('data:image')) {
+            
+        const imageTypeMatch = data.logoBase64.match(/data:image\/(\w+);/);
+        const imageType = (imageTypeMatch && imageTypeMatch[1].toUpperCase()) || 'PNG';
+
+        const img = new Image();
+        img.src = data.logoBase64;
+
+        await new Promise((resolve) => {
+            img.onload = () => resolve();
+            img.onerror = () => {
+                console.error("Erro ao carregar a logo para redimensionamento.");
+                resolve();
+            };
+        });
+        
+        let actualWidth = img.width;
+        let actualHeight = img.height;
+        let ratio = 1;
+
+        if (actualWidth > MAX_LOGO_WIDTH) {
+            ratio = MAX_LOGO_WIDTH / actualWidth;
+        }
+        if (actualHeight * ratio > MAX_LOGO_HEIGHT) {
+            ratio = MAX_LOGO_HEIGHT / actualHeight;
+        }
+
+        const finalWidth = actualWidth * ratio;
+        const finalHeight = actualHeight * ratio;
+        const logoX = centerX - (finalWidth / 2); 
+
+        doc.addImage(data.logoBase64, imageType, logoX, currentY, finalWidth, finalHeight);
+        currentY += finalHeight + 3; 
+    } else {
+        doc.setFontSize(16);
+        doc.setFont('times', 'bold');
+        doc.text(data.schoolName, centerX, currentY + 5, { align: 'center' });
+        currentY += 15;
+        doc.setFontSize(12);
+        doc.setFont('times', 'normal');
     }
-});
 
-// Listener de Apagar Todos (Coordenador)
-const clearAllBtn = document.getElementById('clearAllReports');
-if (clearAllBtn) {
-    clearAllBtn.addEventListener('click', clearAllReports);
+    doc.setFontSize(10);
+    doc.setFont('times', 'normal');
+    doc.text(data.schoolAddress, centerX, currentY, { align: 'center' });
+    currentY += 4;
+    doc.text(`Tel: ${data.schoolPhone} | ${data.schoolWebsite}`, centerX, currentY, { align: 'center' });
+    currentY += 10;
+    
+    doc.setLineWidth(0.5);
+    doc.line(marginX, currentY, marginX + contentWidth, currentY); 
+    currentY += 5;
+
+
+    // 2. TÍTULO E INTRODUÇÃO
+
+    addSectionTitle('RELATÓRIO INDIVIDUAL DE AVALIAÇÃO DESCRITIVA', 14, 'bold');
+    addSectionTitle(data.schoolYear, 12, 'normal');
+    currentY += 5;
+    
+    checkPageBreak(15);
+    doc.setFont('times', 'bold');
+    doc.text(`ALUNO(A): `, marginX, currentY);
+    doc.text(`IDADE: `, marginX + contentWidth * 0.5, currentY);
+    currentY += 6;
+    doc.setFont('times', 'normal');
+    doc.text(data.studentName, marginX + 30, currentY - 6);
+    doc.text(data.studentAge, marginX + contentWidth * 0.5 + 15, currentY - 6);
+    
+    checkPageBreak(15);
+    doc.setFont('times', 'bold');
+    doc.text(`SÉRIE: `, marginX, currentY);
+    doc.text(`ANO/SEMESTRE: `, marginX + contentWidth * 0.5, currentY);
+    currentY += 6;
+    doc.setFont('times', 'normal');
+    doc.text(data.studentGrade, marginX + 30, currentY - 6);
+    doc.text(data.schoolYear, marginX + contentWidth * 0.5 + 40, currentY - 6);
+    currentY += 5;
+    
+    addSectionTitle('DESENVOLVIMENTO', 14, 'bold');
+    currentY += 5;
+
+    // 3. CAMPOS DE EXPERIÊNCIA 
+
+    addSectionTitle('CAMPOS DE EXPERIÊNCIA (BNCC)', 12, 'bold');
+    currentY += 3;
+
+    addDevelopmentField('O Eu, O Outro e o Nós:', data.devEuOutroNos);
+    addDevelopmentField('Escuta, Fala, Pensamento e Imaginação:', data.devEscutaFala);
+    addDevelopmentField('Espaço, Tempo, Quantidade, Relações e Transformações:', data.devEspacoTempo);
+    addDevelopmentField('Corpo, Gesto e Movimento:', data.devCorpoGesto);
+    addDevelopmentField('Traços, Sons, Cores e Formas:', data.devTracosSons);
+
+    // 4. OBSERVAÇÕES ADICIONAIS
+    
+    currentY += 5;
+    addSectionTitle('OBSERVAÇÕES ADICIONAIS', 12, 'bold');
+    currentY += 3;
+
+    addDevelopmentField('Áreas que Necessitam de Maior Atenção e Apoio (Recomendações):', data.improvements);
+    addDevelopmentField('Observações Gerais:', data.generalObservations);
+
+    // 5. ENCERRAMENTO E ASSINATURAS
+
+    currentY += 10;
+    checkPageBreak(30);
+
+    doc.setFont('times', 'normal');
+    const currentDate = new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
+    const city = data.schoolAddress.split(',')[0].trim() || 'Catu/Ba';
+    doc.text(`${city}, ${currentDate}.`, centerX, currentY, { align: 'center' });
+    currentY += 20;
+
+    checkPageBreak(40);
+
+    const signatureY = currentY + 15;
+    const signatureX = marginX + contentWidth * 0.5; 
+    const signatureLineWidth = contentWidth * 0.45; 
+
+    doc.setLineWidth(0.2);
+    doc.line(signatureX - signatureLineWidth / 2, signatureY, signatureX + signatureLineWidth / 2, signatureY);
+
+    doc.setFontSize(10);
+    doc.setFont('times', 'bold');
+
+    doc.text(data.teacherName, signatureX, signatureY + 4, { align: 'center' });
+
+    doc.text('Professor(a) Responsável', signatureX, signatureY + 8, { align: 'center' });
+
+    if (data.digitalSignatureText) {
+        doc.setFontSize(8);
+        doc.setFont('times', 'normal');
+        doc.text(`Assinatura Digital: ${data.digitalSignatureText}`, signatureX, signatureY + 12, { align: 'center' });
+    }
+
+    currentY = signatureY + 15; 
+
+    const filename = `Relatorio_${data.studentName.replace(/\s+/g, '_')}_${new Date().getFullYear()}.pdf`;
+
+    doc.save(filename);
 }
 
-
-// Listeners para a Configuração da Escola (Salva automaticamente ao perder o foco - Apenas Coordenador)
-const schoolConfigFields = ['schoolName', 'schoolAddress', 'schoolPhone', 'schoolWebsite'];
-schoolConfigFields.forEach(id => {
-    const element = document.getElementById(id);
-    if (element) {
-        element.addEventListener('change', updateSchoolConfigFromForm); // change é mais confiável que blur/input para campos de texto
-    }
-});
-
-// Listener para Upload/Limpeza da Logo
-document.getElementById('logoUpload').addEventListener('change', handleLogoUpload);
-document.querySelector('.logo-upload-box').addEventListener('click', async (e) => {
-    const logoPreview = document.getElementById('logoPreview');
-    // Se clicar na caixa e a logo já estiver visível, pergunta se quer remover
-    if (isCoordinator && logoPreview.style.display !== 'none' && logoPreview.src) {
-        e.stopPropagation(); // Evita que o click suba e abra o seletor de arquivo
-        if (confirm("Deseja remover a logo salva e usar a padrão?")) {
-            // Chama a função de upload sem arquivo para limpar
-            document.getElementById('logoUpload').files = null; 
-            handleLogoUpload();
+// ==========================================================
+// 6. FUNÇÃO DE INICIALIZAÇÃO E LISTENERS 
+// ==========================================================
+async function loadAppContent() {
+    // 1. Inicialização da logo e configurações da escola
+    const savedConfig = await loadSchoolConfig();
+    applySavedLogo(savedConfig);
+    
+    // 2. Inicializa o ID do relatório no botão Salvar (para criar um novo por padrão)
+    document.getElementById('saveReport').dataset.id = 'NEW_REPORT_ID';
+    
+    // 3. Atualiza o cache e o display dos relatórios salvos (com permissão)
+    // CORREÇÃO: getAndCacheReports agora chama updateSavedReportsDisplay internamente para garantir que a lista seja atualizada.
+    await getAndCacheReports();
+    
+    // 4. Configura Listeners
+    document.getElementById('saveReport').addEventListener('click', saveReportToFirebase);
+    document.getElementById('generateReport').addEventListener('click', generatePDFWithJsPDF);
+    document.getElementById('logoUpload').addEventListener('change', handleLogoUpload);
+    document.getElementById('schoolName').addEventListener('change', updateSchoolConfigFromForm);
+    document.getElementById('schoolAddress').addEventListener('change', updateSchoolConfigFromForm);
+    document.getElementById('schoolPhone').addEventListener('change', updateSchoolConfigFromForm);
+    document.getElementById('schoolWebsite').addEventListener('change', updateSchoolConfigFromForm);
+    document.getElementById('searchButton').addEventListener('click', handleSearchReports);
+    document.getElementById('searchStudent').addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') {
+            handleSearchReports();
         }
+    });
+    document.getElementById('clearSearch').addEventListener('click', () => {
+        document.getElementById('searchStudent').value = '';
+        updateSavedReportsDisplay(relatoriosCache); 
+    });
+    document.getElementById('clearAllReports').addEventListener('click', clearAllReports);
+    
+    // Listener para o botão Sair
+    const logoutBtn = document.getElementById('logoutButton');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
     }
-});
+}
+
+function handleLogout() {
+    auth.signOut().then(() => {
+        window.location.href = 'login.html';
+    }).catch((error) => {
+        console.error("Erro ao sair:", error);
+        alert("Ocorreu um erro ao tentar sair. Tente novamente.");
+    });
+}
 </script>
 </body>
 </html>
