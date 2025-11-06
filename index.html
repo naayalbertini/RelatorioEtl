@@ -11,6 +11,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-storage-compat.js"></script>
     
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
@@ -485,7 +486,7 @@ async function handleLogoUpload() {
 
 
 // ==========================================================
-// 4. FUNÇÕES DE RELATÓRIO (GET, SET, SAVE, LIST - CORRIGIDAS)
+// 4. FUNÇÕES DE RELATÓRIO (GET, SET, SAVE, LIST)
 // ==========================================================
 
 function getReportDataFromForm() {
@@ -549,21 +550,82 @@ function validateForm() {
     return isValid;
 }
 
-// CORREÇÃO CRÍTICA: LÓGICA DE FILTRAGEM E ATUALIZAÇÃO DO DISPLAY
+function createReportListItem(report) {
+    const timestampText = report.data_atualizacao ? 
+        new Date(report.data_atualizacao.toDate()).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 
+        'Data Desconhecida';
+        
+    const item = document.createElement('div');
+    item.className = 'report-item';
+    item.dataset.id = report.id;
+    item.innerHTML = `
+        <div style="flex-grow: 1;">
+            <strong class="text-primary">${report.studentName}</strong> 
+            <small class="text-muted">(${report.studentGrade || 'S/ Turma'})</small>
+            <br>
+            <small class="text-secondary">Última atualização: ${timestampText}</small>
+        </div>
+        <div>
+            <button class="btn btn-sm btn-info text-white me-2 load-report-btn" data-id="${report.id}" title="Carregar para Edição">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil-square" viewBox="0 0 16 16">
+                  <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.642a.5.5 0 0 1 .707 0l1.293 1.294zm-2.5 4.394-2-2L4.254 13.04a.5.5 0 0 0 .144.148l8.36 1.832a.5.5 0 0 0 .58-.456V6.334z"/>
+                </svg>
+            </button>
+            <button class="btn btn-sm btn-danger delete-report-btn" data-id="${report.id}" title="Apagar Permanentemente">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                  <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                  <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h9.5a1 1 0 0 1 1 1v1zM4 4h8v9a1 1 0 0 0 1-1V5H3v8a1 1 0 0 0 1-1V4zM12 4H4V3h8v1z"/>
+                </svg>
+            </button>
+        </div>
+    `;
+    return item;
+}
+
+function updateSavedReportsDisplay(reportsToDisplay) {
+    const list = document.getElementById('savedReportsList');
+    const countSpan = document.getElementById('savedReportsCount');
+    const noReportsMessage = document.getElementById('noReportsMessage');
+
+    list.innerHTML = ''; // Limpa a lista atual
+    countSpan.textContent = relatoriosCache.length; // Conta no total
+    
+    if (reportsToDisplay.length === 0) {
+        noReportsMessage.style.display = 'block';
+    } else {
+        noReportsMessage.style.display = 'none';
+        reportsToDisplay.forEach(report => {
+            list.appendChild(createReportListItem(report));
+        });
+    }
+    
+    // Adiciona Listeners aos botões gerados dinamicamente
+    list.querySelectorAll('.load-report-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const reportId = e.currentTarget.dataset.id;
+            const report = relatoriosCache.find(r => r.id === reportId);
+            if (report) fillFormWithReport(report);
+        });
+    });
+
+    list.querySelectorAll('.delete-report-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const reportId = e.currentTarget.dataset.id;
+            deleteReport(reportId);
+        });
+    });
+}
+
 async function getAndCacheReports() {
     if (!auth.currentUser) return;
 
     let query = reportsCollection;
     
-    // VERIFICA SE É COORDENADOR/ADMIN PARA EXECUTAR A CONSULTA COMPLETA
     if (isCoordinator) {
         // Coordenador: Vê todos, ordenados por nome do aluno.
-        // ATENÇÃO: Se esta consulta falhar, você precisará CRIAR um índice 'studentName' no Firebase.
         query = query.orderBy('studentName', 'asc');
     } else {
         // Professor: Vê apenas os dele.
-        // FILTRO PELO ID do professor autenticado.
-        // Ordena pela data de atualização (mais recente primeiro) - Consulta simples, evita erro de índice composto.
         query = query
             .where('professor_id', '==', auth.currentUser.uid)
             .orderBy('data_atualizacao', 'desc');
@@ -575,14 +637,12 @@ async function getAndCacheReports() {
         snapshot.forEach(doc => {
             relatoriosCache.push({ id: doc.id, ...doc.data() });
         });
-        console.log(`Relatórios carregados para o cache: ${relatoriosCache.length}`);
         
-        // CORREÇÃO: Chama a atualização da interface AQUI após o carregamento bem-sucedido
+        // Atualiza a lista com o cache completo (antes da busca)
         updateSavedReportsDisplay(relatoriosCache);
         
     } catch (e) {
         console.error("Erro ao carregar relatórios do Firestore:", e);
-        console.error("VERIFIQUE OS ÍNDICES COMPOSTOS NO FIREBASE. O erro provavelmente é devido à regra 'where' + 'orderBy'.");
         document.getElementById('savedReportsCount').textContent = 'ERRO';
         document.getElementById('noReportsMessage').textContent = 'Erro ao carregar relatórios. Verifique o console do navegador e os índices/regras do Firebase.';
         document.getElementById('noReportsMessage').style.display = 'block';
@@ -598,7 +658,7 @@ async function saveReportToFirebase() {
     
     // Metadados do Firebase
     reportData.professor_id = auth.currentUser.uid; 
-    reportData.data_atualizacao = firebase.firestore.FieldValue.serverTimestamp(); // Campo usado na ordenação corrigida
+    reportData.data_atualizacao = firebase.firestore.FieldValue.serverTimestamp(); 
     reportData.timestamp = new Date().toLocaleString('pt-BR'); 
 
     // Padroniza a turma
@@ -619,14 +679,57 @@ async function saveReportToFirebase() {
             alert(`Relatório do(a) aluno(a) ${reportData.studentName} salvo com sucesso no servidor!`);
         }
         
-        // Recarrega apenas os relatórios visíveis para o usuário atual e atualiza a lista
-        await getAndCacheReports();
+        await getAndCacheReports(); // Recarrega a lista
         
         return docId;
 
     } catch (e) {
         console.error("Erro ao salvar relatório no Firebase: ", e);
         alert("Erro ao salvar relatório. Verifique sua conexão e permissões do Firebase/Firestore.");
+    }
+}
+
+async function deleteReport(reportId) {
+    if (!confirm("Tem certeza que deseja apagar permanentemente este relatório? Esta ação não pode ser desfeita.")) return;
+
+    try {
+        await reportsCollection.doc(reportId).delete();
+        alert("Relatório apagado com sucesso.");
+        await getAndCacheReports(); // Recarrega a lista
+        
+        // Se estiver editando o relatório apagado, reseta o formulário
+        if (document.getElementById('saveReport').dataset.id === reportId) {
+            document.getElementById('reportForm').reset();
+            document.getElementById('saveReport').dataset.id = '';
+            applySavedLogo(await loadSchoolConfig()); // Recarrega a logo da config padrão
+        }
+
+    } catch (e) {
+        console.error("Erro ao apagar relatório:", e);
+        alert("Erro ao apagar relatório. Verifique sua conexão e permissões.");
+    }
+}
+
+async function clearAllReports() {
+    if (!isCoordinator) return;
+    if (!confirm("ALERTA MÁXIMO: Você está prestes a APAGAR TODOS OS RELATÓRIOS salvos por TODOS os professores. Deseja continuar?")) return;
+
+    try {
+        // Obter todos os documentos
+        const snapshot = await reportsCollection.get();
+        const batch = db.batch();
+
+        snapshot.forEach((doc) => {
+            batch.delete(reportsCollection.doc(doc.id));
+        });
+
+        await batch.commit();
+        alert(`Todos os ${snapshot.size} relatórios foram apagados com sucesso.`);
+        await getAndCacheReports();
+
+    } catch (e) {
+        console.error("Erro ao apagar todos os relatórios:", e);
+        alert("Erro ao apagar todos os relatórios. Verifique o console.");
     }
 }
 
@@ -666,287 +769,281 @@ async function fillFormWithReport(report) {
     alert(`Relatório do(a) aluno(a) ${report.studentName} carregado para edição. Lembre-se de clicar em "Salvar Relatório" para manter as alterações.`);
 }
 
-// CORREÇÃO CRÍTICA: LÓGICA DE PERMISSÃO PARA EXCLUSÃO
-async function deleteReport(id) {
-    if (!auth.currentUser) return;
-    
-    const reportToDelete = relatoriosCache.find(r => r.id === id);
-    if (!reportToDelete) {
-        alert("Relatório não encontrado.");
-        return;
-    }
-
-    // Checagem de Permissão: Coordenador/Admin PODE OU o criador do relatório PODE.
-    const isOwner = reportToDelete.professor_id === auth.currentUser.uid;
-    
-    // Permissão negada se NÃO for coordenador E NÃO for o dono
-    if (!isCoordinator && !isOwner) {
-         alert("Permissão negada. Apenas o(a) professor(a) criador(a) ou a Coordenadoria podem excluir este relatório.");
-         return;
-    }
-    
-    if (confirm('Tem certeza que deseja EXCLUIR este relatório? Esta ação é irreversível!')) {
-        try {
-            await reportsCollection.doc(id).delete();
-            alert('Relatório excluído do Firebase com sucesso!');
-            
-            await getAndCacheReports();
-            
-            if (document.getElementById('saveReport').dataset.id === id) {
-                 clearForm();
-            }
-            
-        } catch (e) {
-            console.error("Erro ao excluir relatório no Firebase: ", e);
-            alert("Erro ao excluir relatório. Verifique sua conexão e permissões.");
-        }
-    }
-}
-
-
-function clearForm() {
-    document.getElementById('reportForm').reset();
-    document.getElementById('saveReport').dataset.id = ''; // Limpa o ID para criar novo
-    document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
-    // Recarrega a configuração da escola (logo, nome, etc.)
-    loadSchoolConfig(); 
-}
-
-function updateSavedReportsDisplay(reports) {
-    const list = document.getElementById('savedReportsList');
-    const countSpan = document.getElementById('savedReportsCount');
-    const noReportsMessage = document.getElementById('noReportsMessage');
-    
-    list.innerHTML = '';
-    
-    if (reports.length === 0) {
-        countSpan.textContent = '0';
-        noReportsMessage.style.display = 'block';
+function filterReports(searchTerm) {
+    const term = searchTerm.toLowerCase().trim();
+    if (!term) {
+        updateSavedReportsDisplay(relatoriosCache);
         return;
     }
     
-    countSpan.textContent = reports.length;
-    noReportsMessage.style.display = 'none';
-
-    reports.forEach(report => {
-        const item = document.createElement('div');
-        item.classList.add('report-item');
-        
-        // Formata a data de atualização
-        let displayDate = 'N/A';
-        if (report.data_atualizacao && report.data_atualizacao.toDate) {
-             displayDate = report.data_atualizacao.toDate().toLocaleDateString('pt-BR');
-        } else if (report.timestamp) {
-             displayDate = report.timestamp.split(',')[0]; 
-        }
-
-        // Título: Nome do Aluno e Série
-        const title = document.createElement('div');
-        title.innerHTML = `
-            <strong>${report.studentName}</strong> 
-            <span class="badge bg-secondary ms-2">${report.studentGrade}</span> 
-            <small class="text-muted d-block d-md-inline-block mt-1 mt-md-0 ms-md-2"> - Prof.: ${report.teacherName} (Atualizado em ${displayDate})</small>
-        `;
-        title.style.flexGrow = 1;
-        item.appendChild(title);
-        
-        // Botões de Ação
-        const actions = document.createElement('div');
-        actions.innerHTML = `
-            <button class="btn btn-sm btn-info me-2" onclick="fillFormWithReport(relatoriosCache.find(r => r.id === '${report.id}'))" title="Editar Relatório">
-                ✏️ Editar
-            </button>
-            <button class="btn btn-sm btn-danger" onclick="deleteReport('${report.id}')" title="Excluir Relatório">
-                🗑️
-            </button>
-        `;
-        item.appendChild(actions);
-        
-        list.appendChild(item);
+    const filtered = relatoriosCache.filter(report => {
+        const name = report.studentName ? report.studentName.toLowerCase() : '';
+        const grade = report.studentGrade ? report.studentGrade.toLowerCase() : '';
+        return name.includes(term) || grade.includes(term);
     });
+    
+    updateSavedReportsDisplay(filtered);
 }
-
-// ==========================================================
-// 5. INICIALIZAÇÃO DA APLICAÇÃO E LISTENERS
-// ==========================================================
 
 function loadAppContent() {
-    console.log('Aplicação carregada. Permissão:', isCoordinator ? 'Coordenador' : 'Professor');
+    // 1. Carrega as configurações da escola e a logo
+    loadSchoolConfig(); 
     
-    // Carrega a configuração da escola (sempre, para preencher os campos desabilitados)
-    loadSchoolConfig();
-
-    // Carrega e exibe os relatórios salvos
-    getAndCacheReports(); 
-
-    // Adiciona Listeners
-    document.getElementById('logoutButton').addEventListener('click', () => {
-        auth.signOut().then(() => {
-            console.log("Usuário deslogado.");
-            window.location.href = 'login.html'; // Redireciona para a tela de login
-        }).catch((error) => {
-            console.error("Erro ao deslogar:", error);
-            alert("Erro ao deslogar.");
-        });
-    });
-
-    document.getElementById('logoUpload').addEventListener('change', handleLogoUpload);
-
-    // Salvar e Gerar
-    document.getElementById('saveReport').addEventListener('click', saveReportToFirebase);
-    document.getElementById('generateReport').addEventListener('click', generatePDF); // A função generatePDF deve ser implementada separadamente
-
-    // Limpar Formulário
-    document.getElementById('studentName').addEventListener('focus', () => {
-        // Se estiver editando, pergunta se deseja limpar para começar um novo
-        if (document.getElementById('saveReport').dataset.id) {
-            if(confirm('Você está editando um relatório. Deseja limpar o formulário para criar um NOVO relatório?')) {
-                clearForm();
-            }
-        }
-    });
-
-    // Configurações da Escola: Autosave para Coordenadores/Admin
-    if (isCoordinator) {
-        const schoolInputs = document.querySelectorAll('#schoolName, #schoolAddress, #schoolPhone, #schoolWebsite');
-        schoolInputs.forEach(input => {
-            input.addEventListener('change', updateSchoolConfigFromForm);
-        });
-        
-        // Listener para o botão de apagar TUDO (Coordenador)
-        document.getElementById('clearAllReports').addEventListener('click', async () => {
-            if (!isCoordinator) return;
-            if (confirm("ATENÇÃO: Você está prestes a apagar TODOS os relatórios salvos no servidor (incluindo de outros professores). Tem certeza? Esta ação é IRREVERSÍVEL!")) {
-                 if (prompt("Para confirmar, digite a palavra 'APAGARTUDO' (em maiúsculas):") === 'APAGARTUDO') {
-                     alert("Funcionalidade de exclusão em massa não implementada neste template, para evitar acidentes. Implemente com cuidado!");
-                     // Lógica real seria:
-                     // const allDocs = await reportsCollection.get();
-                     // const batch = db.batch();
-                     // allDocs.forEach(doc => batch.delete(doc.ref));
-                     // await batch.commit();
-                     // getAndCacheReports();
-                 } else {
-                     alert("Confirmação cancelada ou incorreta.");
-                 }
-            }
-        });
-    }
-
-    // Busca de Relatórios
-    document.getElementById('searchButton').addEventListener('click', () => {
-        const searchTerm = document.getElementById('searchStudent').value.toLowerCase().trim();
-        const filteredReports = relatoriosCache.filter(report => 
-            report.studentName.toLowerCase().includes(searchTerm) || 
-            report.studentGrade.toLowerCase().includes(searchTerm)
-        );
-        updateSavedReportsDisplay(filteredReports);
-    });
-
-    document.getElementById('clearSearch').addEventListener('click', () => {
-        document.getElementById('searchStudent').value = '';
-        updateSavedReportsDisplay(relatoriosCache); // Mostra todos novamente
-    });
-
-    // Listener para o clique na logo para remover, se já houver uma
-    document.querySelector('.logo-upload-box').addEventListener('click', function(e) {
-        if (!isCoordinator) return;
-        const logoPreview = document.getElementById('logoPreview');
-        // Se a logo estiver visível, permite a remoção
-        if (logoPreview.style.display !== 'none' && !document.getElementById('logoUpload').files.length) {
-            if(confirm("Deseja remover a logo salva?")) {
-                handleLogoUpload(); // Chama a função sem arquivo para limpar
-            }
-        }
-    });
-
+    // 2. Carrega e exibe a lista de relatórios
+    getAndCacheReports();
 }
 
 // ==========================================================
-// 6. FUNÇÃO PLACEHOLDER PARA GERAÇÃO DE PDF
+// 5. LÓGICA DE GERAÇÃO E RENDERIZAÇÃO DE PDF (OTIMIZADA PARA MOBILE)
 // ==========================================================
 
-// Esta função deve ser aprimorada, especialmente para lidar com quebras de linha longas (textarea) e fontes.
-function generatePDF() {
+// Função CRÍTICA: Cria o HTML limpo e formatado do relatório (o que será transformado em PDF)
+function generateReportHTML(data) {
+    // 1. Cria o contêiner principal do PDF com estilos básicos de relatório
+    const reportContainer = document.createElement('div');
+    // ID temporário para a captura
+    reportContainer.id = 'relatorio-pronto-para-pdf'; 
+    // Estilos internos essenciais para layout do PDF
+    reportContainer.style.padding = '20mm'; 
+    reportContainer.style.fontFamily = 'Arial, sans-serif';
+    reportContainer.style.fontSize = '12pt';
+    reportContainer.style.color = '#333';
+    reportContainer.style.lineHeight = '1.5';
+
+    // 2. Cabeçalho (Logo e Info da Escola)
+    let headerHTML = `
+        <div style="border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="flex-grow: 1;">
+                <h1 style="font-size: 16pt; color: #007bff; margin: 0;">Relatório Individual de Avaliação Descritiva</h1>
+                <p style="font-size: 10pt; margin: 0; color: #555;">${data.schoolYear} - ${data.studentGrade}</p>
+                <p style="font-size: 10pt; margin: 0; color: #555;">${data.schoolName} - ${data.schoolAddress}</p>
+                <p style="font-size: 10pt; margin: 0; color: #555;">${data.schoolPhone} | ${data.schoolWebsite}</p>
+            </div>
+    `;
+    if (data.logoBase64) {
+        // Reduz o tamanho da imagem no PDF para evitar estouro em páginas A4
+        headerHTML += `<img src="${data.logoBase64}" style="max-height: 80px; width: auto; margin-left: 20px;">`;
+    }
+    headerHTML += `</div>`;
+    reportContainer.innerHTML = headerHTML;
+    
+    // 3. Informações do Aluno
+    reportContainer.innerHTML += `
+        <div style="margin-bottom: 30px; border: 1px solid #ddd; padding: 15px; border-radius: 5px;">
+            <h2 style="font-size: 14pt; color: #212529; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top: 0;">Informações do Aluno</h2>
+            <p style="margin: 5px 0;"><strong>Nome do Aluno:</strong> ${data.studentName}</p>
+            <p style="margin: 5px 0;"><strong>Idade/Anos:</strong> ${data.studentAge}</p>
+            <p style="margin: 5px 0;"><strong>Professor(a):</strong> ${data.teacherName}</p>
+        </div>
+    `;
+
+    // 4. Seções de Desenvolvimento (Campos de Experiência)
+    const sectionTitleStyle = "font-size: 13pt; color: #28a745; margin-top: 20px; border-bottom: 1px dashed #28a745; padding-bottom: 3px;";
+    
+    const developmentFields = [
+        { label: "O Eu, O Outro e o Nós", dataKey: 'devEuOutroNos' },
+        { label: "Escuta, Fala, Pensamento e Imaginação", dataKey: 'devEscutaFala' },
+        { label: "Espaço, Tempo, Quantidade, Relações e Transformações", dataKey: 'devEspacoTempo' },
+        { label: "Corpo, Gesto e Movimento", dataKey: 'devCorpoGesto' },
+        { label: "Traços, Sons, Cores e Formas", dataKey: 'devTracosSons' }
+    ];
+
+    developmentFields.forEach(field => {
+        if (data[field.dataKey] && data[field.dataKey].trim()) {
+            reportContainer.innerHTML += `
+                <h3 style="${sectionTitleStyle}">${field.label}</h3>
+                <p style="text-align: justify; margin-top: 10px; white-space: pre-wrap;">${data[field.dataKey]}</p>
+            `;
+        }
+    });
+    
+    // 5. Observações/Recomendações
+    if (data.improvements && data.improvements.trim()) {
+        reportContainer.innerHTML += `
+            <h3 style="font-size: 13pt; color: #ffc107; margin-top: 30px; border-bottom: 1px dashed #ffc107; padding-bottom: 3px;">Áreas que Necessitam de Maior Atenção e Apoio (Recomendações)</h3>
+            <p style="text-align: justify; margin-top: 10px; white-space: pre-wrap;">${data.improvements}</p>
+        `;
+    }
+    
+    if (data.generalObservations && data.generalObservations.trim()) {
+        reportContainer.innerHTML += `
+            <h3 style="font-size: 13pt; color: #6c757d; margin-top: 30px; border-bottom: 1px dashed #6c757d; padding-bottom: 3px;">Observações Gerais</h3>
+            <p style="text-align: justify; margin-top: 10px; white-space: pre-wrap;">${data.generalObservations}</p>
+        `;
+    }
+    
+    // 6. Rodapé e Assinatura
+    const date = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+    reportContainer.innerHTML += `
+        <div style="margin-top: 50px; text-align: center;">
+            <p style="margin-bottom: 40px; font-size: 11pt;">Catu/BA, ${date}</p>
+            
+            <div style="display: flex; justify-content: space-around; font-size: 11pt;">
+                <div style="width: 40%; text-align: center;">
+                    <hr style="border-top: 1px solid #333; margin-bottom: 5px;">
+                    <p style="margin: 0;"><strong>${data.teacherName}</strong></p>
+                    <p style="margin: 0; font-size: 10pt; color: #555;">Professor(a) - ${data.digitalSignatureText}</p>
+                </div>
+                <div style="width: 40%; text-align: center;">
+                    <hr style="border-top: 1px solid #333; margin-bottom: 5px;">
+                    <p style="margin: 0;">Assinatura do Coordenador(a)</p>
+                </div>
+            </div>
+        </div>
+    `;
+
+    return reportContainer;
+}
+
+const { jsPDF } = window.jspdf;
+/**
+ * Gera um PDF otimizado para dispositivos móveis a partir de um elemento HTML.
+ * @param {HTMLElement} elemento - O elemento HTML que contém o relatório.
+ * @param {string} filename - O nome do arquivo PDF a ser salvo.
+ */
+function gerarRelatorioPDF(elemento, filename = 'Relatorio_Gerado.pdf') {
+    // 1. Prepara o elemento para captura fora da tela visível
+    elemento.style.position = 'absolute';
+    elemento.style.top = '-9999px';
+    document.body.appendChild(elemento);
+
+    const options = {
+        // Fator de escala aumentado para 2.5 para alta qualidade (essencial em telas de celular)
+        scale: 2.5, 
+        width: elemento.offsetWidth, 
+        windowHeight: elemento.scrollHeight, 
+        scrollY: -window.scrollY // Desliga a rolagem de tela durante a captura
+    };
+    
+    // 2. Captura o HTML para um Canvas (Imagem)
+    html2canvas(elemento, options).then(canvas => {
+        const imgData = canvas.toDataURL('image/jpeg', 1.0);
+        
+        // 3. Cria o objeto PDF
+        const pdf = new jsPDF('p', 'mm', 'a4'); 
+        
+        const pdfWidth = pdf.internal.pageSize.getWidth(); 
+        const pdfHeight = pdf.internal.pageSize.getHeight(); 
+        
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+        
+        // Calcula a altura da imagem ajustada à largura do PDF (mantendo a proporção)
+        let targetHeight = (imgHeight * pdfWidth) / imgWidth;
+        
+        let position = 0; 
+        let heightLeft = targetHeight;
+        
+        // 4. Adiciona a imagem no PDF (com suporte a múltiplas páginas)
+        while (heightLeft >= 0) {
+            pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, targetHeight);
+            
+            heightLeft -= pdfHeight; 
+            
+            if (heightLeft >= 0) {
+                pdf.addPage();
+                // A posição deve ser negativa, movendo a "visão" do PDF para o próximo bloco do canvas
+                position = - (targetHeight - heightLeft); 
+            }
+        }
+        
+        // 5. Salva o arquivo
+        pdf.save(filename);
+        
+        // 6. Limpeza e Restauração
+        document.body.removeChild(elemento);
+        
+        alert(`PDF "${filename}" gerado com sucesso!`);
+    }).catch(error => {
+        document.body.removeChild(elemento);
+        console.error("Erro na geração do PDF:", error);
+        alert("Erro na geração do PDF. Tente novamente ou verifique se o seu relatório está muito extenso.");
+    });
+}
+
+
+// ==========================================================
+// 6. EVENT LISTENERS
+// ==========================================================
+
+// Listener de Logout
+document.getElementById('logoutButton').addEventListener('click', () => {
+    auth.signOut().then(() => {
+        window.location.href = 'login.html';
+    }).catch((error) => {
+        console.error("Erro ao fazer logout:", error);
+    });
+});
+
+// Listener de Geração de PDF
+document.getElementById('generateReport').addEventListener('click', () => {
     if (!validateForm()) {
         return;
     }
     
-    // Simplesmente obtém os dados e loga no console (o jspdf é complexo de implementar totalmente aqui)
-    const data = getReportDataFromForm();
+    const reportData = getReportDataFromForm();
+    const reportElement = generateReportHTML(reportData);
     
-    alert(`Gerando PDF para ${data.studentName}... \n (Necessário implementar a lógica completa de renderização com jsPDF)`);
-    console.log("Dados prontos para PDF:", data);
+    // Nome do arquivo limpo
+    const studentNameClean = reportData.studentName.replace(/[^a-zA-Z0-9_ ]/g, '').slice(0, 30);
+    const gradeClean = reportData.studentGrade.replace(/[^a-zA-Z0-9_ ]/g, '').slice(0, 10);
+    const filename = `${studentNameClean}_${gradeClean}.pdf`.replace(/ /g, '_');
 
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    let y = 10;
-    
-    // Exemplo de cabeçalho
-    if (data.logoBase64) {
-        try {
-            doc.addImage(data.logoBase64, 'JPEG', 10, y, 30, 30);
-        } catch(e) {
-            console.warn("Erro ao adicionar logo ao PDF. Verifique o formato.", e);
-        }
+    gerarRelatorioPDF(reportElement, filename);
+});
+
+// Listener de Salvar Relatório
+document.getElementById('saveReport').addEventListener('click', saveReportToFirebase);
+
+// Listener de Busca
+document.getElementById('searchButton').addEventListener('click', () => {
+    const searchTerm = document.getElementById('searchStudent').value;
+    filterReports(searchTerm);
+});
+
+// Listener de Limpar Busca
+document.getElementById('clearSearch').addEventListener('click', () => {
+    document.getElementById('searchStudent').value = '';
+    filterReports('');
+});
+
+// Listener de Busca com Enter
+document.getElementById('searchStudent').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        document.getElementById('searchButton').click();
     }
-    
-    doc.setFontSize(16);
-    doc.text(data.schoolName, 50, y + 10);
-    doc.setFontSize(10);
-    doc.text(`Relatório Individual - ${data.schoolYear}`, 50, y + 16);
-    y += 40;
-    
-    // Exemplo de seção de dados do aluno
-    doc.setFontSize(12);
-    doc.text(`Aluno(a): ${data.studentName}`, 10, y);
-    doc.text(`Turma: ${data.studentGrade}`, 110, y);
-    y += 7;
-    doc.text(`Professor(a): ${data.teacherName}`, 10, y);
-    y += 10;
-    
-    // Seções de Campos de Experiência (Simplificado)
-    doc.setFontSize(14);
-    doc.text("3. Desenvolvimento: Campos de Experiência (BNCC)", 10, y);
-    y += 5;
-    
-    // Atenção: Esta é uma função SIMPLES de text-wrap e deve ser aprimorada
-    const drawTextareaContent = (title, content) => {
-        doc.setFontSize(12);
-        doc.text(`${title}:`, 10, y + 5);
-        doc.setFontSize(10);
-        const lines = doc.splitTextToSize(content || "Sem descrição.", 180);
-        lines.forEach(line => {
-            y += 5;
-            if (y > 280) { // Nova página se passar do limite
-                doc.addPage();
-                y = 10;
-            }
-            doc.text(line, 15, y);
-        });
-        y += 7; // Espaçamento entre seções
-    };
+});
 
-    drawTextareaContent("O Eu, O Outro e o Nós", data.devEuOutroNos);
-    drawTextareaContent("Escuta, Fala, Pensamento e Imaginação", data.devEscutaFala);
-    drawTextareaContent("Espaço, Tempo, Quantidade, Relações e Transformações", data.devEspacoTempo);
-    drawTextareaContent("Corpo, Gesto e Movimento", data.devCorpoGesto);
-    drawTextareaContent("Traços, Sons, Cores e Formas", data.devTracosSons);
-    
-    // Observações
-    doc.setFontSize(14);
-    doc.text("4. Áreas que Necessitam de Maior Atenção (Recomendações)", 10, y);
-    drawTextareaContent("Recomendações", data.improvements);
-    
-    doc.setFontSize(14);
-    doc.text("5. Observações Gerais", 10, y);
-    drawTextareaContent("Comentários", data.generalObservations);
-
-    
-    doc.save(`Relatorio_${data.studentName.replace(/\s/g, '')}.pdf`);
+// Listener de Apagar Todos (Coordenador)
+const clearAllBtn = document.getElementById('clearAllReports');
+if (clearAllBtn) {
+    clearAllBtn.addEventListener('click', clearAllReports);
 }
 
-// Inicia o listener de autenticação, que por sua vez chama loadAppContent()
-// Não é necessário chamar nenhuma função aqui fora do escopo, pois o auth.onAuthStateChanged gerencia o fluxo.
+
+// Listeners para a Configuração da Escola (Salva automaticamente ao perder o foco - Apenas Coordenador)
+const schoolConfigFields = ['schoolName', 'schoolAddress', 'schoolPhone', 'schoolWebsite'];
+schoolConfigFields.forEach(id => {
+    const element = document.getElementById(id);
+    if (element) {
+        element.addEventListener('change', updateSchoolConfigFromForm); // change é mais confiável que blur/input para campos de texto
+    }
+});
+
+// Listener para Upload/Limpeza da Logo
+document.getElementById('logoUpload').addEventListener('change', handleLogoUpload);
+document.querySelector('.logo-upload-box').addEventListener('click', async (e) => {
+    const logoPreview = document.getElementById('logoPreview');
+    // Se clicar na caixa e a logo já estiver visível, pergunta se quer remover
+    if (isCoordinator && logoPreview.style.display !== 'none' && logoPreview.src) {
+        e.stopPropagation(); // Evita que o click suba e abra o seletor de arquivo
+        if (confirm("Deseja remover a logo salva e usar a padrão?")) {
+            // Chama a função de upload sem arquivo para limpar
+            document.getElementById('logoUpload').files = null; 
+            handleLogoUpload();
+        }
+    }
+});
 </script>
 </body>
 </html>
