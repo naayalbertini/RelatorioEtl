@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Relatório Individual de Avaliação Descritiva (Educação Infantil/Ensino Fundamental I)</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-storage-compat.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 900px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        /* OTIMIZAÇÃO MOBILE: Remove sombra e arredondamento nas bordas em telas pequenas para se parecer com um app */
+        @media (max-width: 767px) {
+            .container {
+                padding: 15px; 
+                box-shadow: none; 
+                margin-top: 0;
+                margin-bottom: 0;
+                border-radius: 0;
+            }
+            .row > div[class*="col-"] {
+                margin-bottom: 15px; 
+            }
+            /* Ajusta a fonte do título em mobile */
+            .text-start h2 {
+                font-size: 1.5rem !important;
+            }
+        }
+
+        .nav-tabs .nav-link {
+            font-weight: bold;
+            color: #495057;
+        }
+        .nav-tabs .nav-link.active {
+            color: #0d6efd;
+            border-color: #dee2e6 #dee2e6 #fff;
+            background-color: #fff;
+        }
+        .form-label.required::after {
+            content: " *";
+            color: red;
+            font-weight: bold;
+        }
+        textarea {
+            min-height: 120px;
+            font-family: Arial, sans-serif;
+        }
+        /* Estilo para a pré-visualização da logo */
+        .logo-upload-box {
+            border: 1px dashed #ccc;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+        }
+        .logo-preview {
+            max-width: 100%;
+            max-height: 80px;
+            display: none; 
+            margin-bottom: 5px;
+        }
+        .logo-placeholder {
+            font-size: 30px;
+            color: #6c757d;
+        }
+        .report-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .report-item:last-child {
+            border-bottom: none;
+        }
+        #savedReportsList {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container"> 
+        <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-start align-items-md-center mb-4 pb-2 border-bottom">
+            
+            <div class="text-start mb-3 mb-md-0">
+                <h2 class="text-primary" style="margin-bottom: 0;">Gerador de Relatório Individual</h2>
+                <p class="text-muted" style="font-size: 0.9em; margin-bottom: 0;">Ferramenta para Educação Infantil e Ensino Fundamental I</p>
+            </div>
+            
+            <button id="logoutButton" class="btn btn-danger btn-sm align-self-end align-self-md-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-box-arrow-right me-1" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1-.5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 1 3.5v9A1.5 1.5 0 0 0 2.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/>
+                    <path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/>
+                </svg>
+                Sair
+            </button>
+            
+        </div>
+        
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="create-tab" data-bs-toggle="tab" data-bs-target="#create-tab-pane" type="button" role="tab" aria-controls="create-tab-pane" aria-selected="true">✍️ Criar Relatório</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="saved-tab" data-bs-toggle="tab" data-bs-target="#saved-tab-pane" type="button" role="tab" aria-controls="saved-tab-pane" aria-selected="false">📚 Relatórios Salvos (<span id="savedReportsCount">0</span>)</button>
+            </li>
+        </ul>
+
+        <div class="tab-content pt-3" id="myTabContent">
+
+            <div class="tab-pane fade show active" id="create-tab-pane" role="tabpanel" aria-labelledby="create-tab" tabindex="0">
+                <form id="reportForm">
+                    
+                    <h5 class="mt-3 mb-3 text-secondary">1. Configuração da Escola (Salva Automaticamente)</h5>
+                    <div class="row mb-3">
+                        <div class="col-12 col-md-4 order-md-1 mb-3 mb-md-0">
+                            <input type="text" class="form-control" id="schoolName" placeholder="Escola Traços e Letras" required disabled aria-label="Nome da Escola" title="Campo editável apenas por Coordenadores/Admin">
+                        </div>
+                        <div class="col-12 col-md-4 order-md-2 mb-3 mb-md-0">
+                            <input type="text" class="form-control" id="schoolAddress" placeholder="Catu/Ba" required disabled aria-label="Endereço da Escola" title="Campo editável apenas por Coordenadores/Admin">
+                        </div>
+                        <div class="col-12 col-md-4 order-md-3">
+                            <div class="logo-upload-box" onclick="document.getElementById('logoUpload').click()">
+                                <input type="file" id="logoUpload" accept="image/*" style="display: none;">
+                                <img id="logoPreview" class="logo-preview" alt="Pré-visualização da Logo">
+                                <span id="logoPlaceholder" class="logo-placeholder">🖼️</span>
+                                <small class="text-muted" id="logoText">Logo da Escola</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-4">
+                        <div class="col-12 col-md-6 mb-3 mb-md-0">
+                            <input type="text" class="form-control" id="schoolPhone" placeholder=" (71) 98200-2432" required disabled aria-label="Telefone da Escola" title="Campo editável apenas por Coordenadores/Admin">
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <input type="text" class="form-control" id="schoolWebsite" placeholder="www.portaltracoseletras.com.br" required disabled aria-label="Site da Escola" title="Campo editável apenas por Coordenadores/Admin">
+                        </div>
+                    </div>
+
+                    <h5 class="mt-3 mb-3 text-secondary">2. Informações do Aluno/Professor</h5>
+                    <div class="row mb-3">
+                        <div class="col-12 col-md-6 mb-3 mb-md-0">
+                            <label for="studentName" class="form-label required">Nome Completo do Aluno(a)</label>
+                            <input type="text" class="form-control" id="studentName" required>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label for="studentAge" class="form-label required">Idade/Anos</label>
+                            <input type="text" class="form-control" id="studentAge" required placeholder="Ex: 4 anos">
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label for="studentGrade" class="form-label required">Série/Turma</label>
+                            <input type="text" class="form-control" id="studentGrade" required placeholder="Ex: Infantil III">
+                        </div>
+                    </div>
+                    <div class="row mb-4">
+                        <div class="col-12 col-md-4 mb-3 mb-md-0">
+                            <label for="schoolYear" class="form-label required">Ano Letivo/Semestre</label>
+                            <input type="text" class="form-control" id="schoolYear" required placeholder="Ex: 2024 / I Semestre">
+                        </div>
+                        <div class="col-12 col-md-4 mb-3 mb-md-0">
+                            <label for="teacherName" class="form-label required">Nome do Professor(a)</label>
+                            <input type="text" class="form-control" id="teacherName" required>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label for="digitalSignatureText" class="form-label">Texto da Assinatura Digital (Ex: Matrícula, A. Profissional)</label>
+                            <input type="text" class="form-control" id="digitalSignatureText" placeholder="Ex: Matrícula 12345/BA">
+                        </div>
+                    </div>
+
+                    <h5 class="mt-4 mb-3 text-secondary">3. Desenvolvimento: Campos de Experiência (BNCC)</h5>
+                    <p class="text-muted"><small>Descreva o desenvolvimento da criança em cada campo de forma detalhada e positiva.</small></p>
+
+                    <div class="mb-3">
+                        <label for="devEuOutroNos" class="form-label">O Eu, O Outro e o Nós:</label>
+                        <textarea class="form-control" id="devEuOutroNos" placeholder="Interação com pares, respeito às regras, autonomia, identidade."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="devEscutaFala" class="form-label">Escuta, Fala, Pensamento e Imaginação:</label>
+                        <textarea class="form-control" id="devEscutaFala" placeholder="Expressão oral, compreensão de histórias, vocabulário, formulação de perguntas."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="devEspacoTempo" class="form-label">Espaço, Tempo, Quantidade, Relações e Transformações:</label>
+                        <textarea class="form-control" id="devEspacoTempo" placeholder="Noções espaciais e temporais, contagem, comparação de objetos, raciocínio lógico-matemático."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="devCorpoGesto" class="form-label">Corpo, Gesto e Movimento:</label>
+                        <textarea class="form-control" id="devCorpoGesto" placeholder="Coordenação motora ampla e fina, equilíbrio, lateralidade, uso do corpo para expressar emoções."></textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="devTracosSons" class="form-label">Traços, Sons, Cores e Formas:</label>
+                        <textarea class="form-control" id="devTracosSons" placeholder="Interesse por artes visuais, música, formas geométricas, percepção sensorial."></textarea>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="otherTeachers" class="form-label">Outros Professores Envolvidos (Opcional, não aparece no PDF, apenas para registro)</label>
+                        <input type="text" class="form-control" id="otherTeachers" placeholder="Ex: Prof. de Inglês, Prof. de Música">
+                    </div>
+
+                    <h5 class="mt-4 mb-3 text-secondary">4. Observações Adicionais (Recomendações)</h5>
+
+
+                    <div class="mb-3">
+                        <label for="improvements" class="form-label">Áreas que Necessitam de Maior Atenção e Apoio (Recomendações):</label>
+                        <textarea class="form-control" id="improvements" placeholder="Sugestões de intervenção em casa e na escola."></textarea>
+                    </div>
+
+                    <div class="mb-5">
+                        <label for="generalObservations" class="form-label">Observações Gerais (Opcional):</label>
+                        <textarea class="form-control" id="generalObservations" placeholder="Comentários finais ou informações relevantes."></textarea>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                        <button type="button" class="btn btn-warning btn-lg" id="saveReport" data-id="" title="Salva o relatório no servidor para edição posterior.">💾 Salvar Relatório</button>
+                        <button type="button" class="btn btn-primary btn-lg" id="generateReport" title="Gera o PDF com base nos dados do formulário.">📄 Gerar PDF</button>
+                    </div>
+
+                </form>
+            </div>
+
+            <div class="tab-pane fade" id="saved-tab-pane" role="tabpanel" aria-labelledby="saved-tab" tabindex="0">
+                <h5 class="mt-3 mb-3 text-secondary">Relatórios Salvos no Servidor Firebase</h5>
+
+                <div class="row mb-3 align-items-center">
+                    <div class="col-12 col-md-8 mb-3 mb-md-0">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="searchStudent" placeholder="Buscar por Nome do Aluno ou Série">
+                            <button class="btn btn-outline-secondary" type="button" id="searchButton" title="Buscar">🔎</button>
+                            <button class="btn btn-outline-secondary" type="button" id="clearSearch" title="Limpar Busca">❌</button>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-4 text-center text-md-end">
+                        <button class="btn btn-danger btn-sm" id="clearAllReports" style="display: none;" title="Apaga TODOS os relatórios salvos. Cuidado!">🚨 Apagar Tudo</button>
+                    </div>
+                </div>
+
+                <div id="savedReportsList">
+                    </div>
+                
+                <p id="noReportsMessage" class="text-center text-muted mt-4" style="display: none;">Nenhum relatório salvo ainda. Use o botão "Salvar Relatório" na aba anterior!</p>
+            </div>
+
+        </div> 
+        <p class="text-center mt-5 text-muted"><small>Desenvolvido por Nay como recurso de apoio pedagógico.
+        </small></p>
+
+    </div> 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// ==========================================================
+// 1. CONFIGURAÇÃO E INICIALIZAÇÃO DO FIREBASE
+// ==========================================================
+
+const firebaseConfig = {
+    apiKey: "AIzaSyCchixFInasRgOlmjPEafVYwVlGSqkqMIg", 
+    authDomain: "geradorrelatoriosescola.firebaseapp.com",
+    projectId: "geradorrelatoriosescola",
+    storageBucket: "geradorrelatoriosescola.firebasestorage.app",
+    messagingSenderId: "286288216743",
+    appId: "1:286288216743:web:52ac6a1f23cdb7a4c91182"
+};
+
+const app = firebase.initializeApp(firebaseConfig);
+const db = app.firestore();
+const auth = app.auth(); 
+const storageRef = app.storage().ref(); 
+
+// Variáveis Globais
+let isCoordinator = false; 
+let relatoriosCache = [];
+const reportsCollection = db.collection("relatorios"); 
+const configDocRef = db.collection("config").doc("school_details");
+
+// Variável de Permissão (Simplificada)
+let usuarioPermissao = { tipo: 'deslogado' }; 
+
+
+// ==========================================================
+// 2. LÓGICA DE AUTENTICAÇÃO E PERMISSÃO
+// ==========================================================
+
+auth.onAuthStateChanged(user => {
+    const appContent = document.querySelector('.container'); 
+    
+    if (user) {
+        appContent.style.display = 'block';
+
+        // CHECAGEM CRÍTICA DE PERFIL (Para Coordenador)
+        db.collection('usuarios').doc(user.uid).get()
+            .then(doc => {
+                const userData = doc.data();
+                usuarioPermissao = userData || { tipo: 'professor' }; // Define a permissão
+                
+                if (userData && (userData.tipo === 'coordenador' || userData.tipo === 'admin')) {
+                    isCoordinator = true;
+                    
+                    // 1. HABILITA EDIÇÃO DOS CAMPOS DA ESCOLA
+                    document.getElementById('schoolName').disabled = false;
+                    document.getElementById('schoolAddress').disabled = false;
+                    document.getElementById('schoolPhone').disabled = false;
+                    document.getElementById('schoolWebsite').disabled = false;
+                    document.getElementById('logoUpload').disabled = false;
+                    
+                    // 2. MOSTRA BOTÃO DE EXCLUSÃO EM MASSA
+                    const clearAllBtn = document.getElementById('clearAllReports');
+                    if (clearAllBtn) {
+                        clearAllBtn.style.display = 'inline-block';
+                    }
+                } else {
+                    isCoordinator = false;
+                    // ESCONDE BOTÃO DE EXCLUSÃO EM MASSA para professores
+                    const clearAllBtn = document.getElementById('clearAllReports');
+                    if (clearAllBtn) {
+                        clearAllBtn.style.display = 'none';
+                    }
+                }
+                
+                // Chamada de Inicialização da Aplicação
+                loadAppContent(); 
+            })
+            .catch(error => {
+                console.error("Erro ao carregar perfil do usuário:", error);
+                isCoordinator = false;
+                loadAppContent();
+            });
+        
+    } else {
+        // Usuário deslogado: redireciona
+        appContent.style.display = 'none'; 
+        window.location.href = 'login.html';
+    }
+});
+
+
+// ==========================================================
+// 3. FUNÇÕES DE CONFIGURAÇÃO DA ESCOLA 
+// ==========================================================
+
+async function saveSchoolConfig(schoolName, logoBase64, schoolAddress, schoolPhone, schoolWebsite) {
+    if (!auth.currentUser || !isCoordinator) return; // Apenas coordenador salva
+    const config = {
+        schoolName: schoolName,
+        logoBase64: logoBase64 || '',
+        schoolAddress: schoolAddress || '',
+        schoolPhone: schoolPhone || '',
+        schoolWebsite: schoolWebsite || ''
+    };
+    try {
+        await configDocRef.set(config, { merge: true });
+        console.log("Configurações da escola salvas no Firebase.");
+    } catch (e) {
+        console.error("Erro ao salvar configurações da escola no Firebase: ", e);
+    }
+}
+
+async function loadSchoolConfig() {
+    if (!auth.currentUser) return null; 
+    try {
+        const doc = await configDocRef.get();
+        if (doc.exists) {
+            applySavedLogo(doc.data());
+            return doc.data();
+        }
+    } catch (e) {
+        console.error("Erro ao carregar configurações da escola do Firebase: ", e);
+    }
+    return null;
+}
+
+function applySavedLogo(config) {
+    const logoPreview = document.getElementById('logoPreview');
+    const logoPlaceholder = document.getElementById('logoPlaceholder');
+    const schoolNameInput = document.getElementById('schoolName');
+    const schoolAddressInput = document.getElementById('schoolAddress');
+    const schoolPhoneInput = document.getElementById('schoolPhone');
+    const schoolWebsiteInput = document.getElementById('schoolWebsite');
+
+    if (config) {
+        // Atualiza os campos
+        if (config.schoolName) { schoolNameInput.value = config.schoolName; }
+        if (config.schoolAddress) { schoolAddressInput.value = config.schoolAddress; }
+        if (config.schoolPhone) { schoolPhoneInput.value = config.schoolPhone; }
+        if (config.schoolWebsite) { schoolWebsiteInput.value = config.schoolWebsite; }
+
+        if (config.logoBase64 && config.logoBase64.startsWith('data:image')) {
+            logoPreview.src = config.logoBase64;
+            logoPreview.style.display = 'block';
+            logoPlaceholder.style.display = 'none';
+            document.getElementById('logoText').textContent = 'Logo salva (Clique para remover)';
+            return; 
+        }
+    }
+    
+    logoPreview.src = '';
+    logoPreview.style.display = 'none';
+    logoPlaceholder.style.display = 'block';
+    document.getElementById('logoText').textContent = 'Logo da Escola';
+}
+
+async function updateSchoolConfigFromForm() {
+    if (!auth.currentUser || !isCoordinator) return;
+    const logoPreview = document.getElementById('logoPreview');
+    // Usa o src da preview, que pode ser Base64 ou vazio
+    const logoData = logoPreview.style.display !== 'none' && logoPreview.src.startsWith('data:image') 
+                             ? logoPreview.src 
+                             : ''; 
+    await saveSchoolConfig(
+        document.getElementById('schoolName').value,
+        logoData,
+        document.getElementById('schoolAddress').value,
+        document.getElementById('schoolPhone').value,
+        document.getElementById('schoolWebsite').value
+    );
+}
+
+async function handleLogoUpload() {
+    if (!auth.currentUser || !isCoordinator) {
+        alert("Apenas coordenadores podem fazer upload/alterar a logo.");
+        return;
+    }
+
+    const fileInput = document.getElementById('logoUpload');
+    const file = fileInput.files[0];
+    
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = async function (e) {
+            const logoBase64 = e.target.result;
+            const logoPreview = document.getElementById('logoPreview');
+            const logoPlaceholder = document.getElementById('logoPlaceholder');
+            logoPreview.src = logoBase64;
+            logoPreview.style.display = 'block';
+            logoPlaceholder.style.display = 'none';
+            document.getElementById('logoText').textContent = 'Logo carregada e salva automaticamente';
+            await updateSchoolConfigFromForm(); // Salva no Firestore
+        };
+        reader.readAsDataURL(file);
+    } else {
+        // Limpa a logo
+        await saveSchoolConfig(
+             document.getElementById('schoolName').value,
+             '',
+             document.getElementById('schoolAddress').value,
+             document.getElementById('schoolPhone').value,
+             document.getElementById('schoolWebsite').value
+        );
+        const config = await loadSchoolConfig();
+        applySavedLogo(config);
+    }
+    fileInput.value = '';
+}
+
+
+// ==========================================================
+// 4. FUNÇÕES DE RELATÓRIO (GET, SET, SAVE, LIST - CORRIGIDAS)
+// ==========================================================
+
+function getReportDataFromForm() {
+    const logoPreview = document.getElementById('logoPreview');
+    const logoData = logoPreview.style.display !== 'none' && logoPreview.src.startsWith('data:image') 
+                             ? logoPreview.src 
+                             : ''; 
+
+    const reportData = {
+        // Info da Escola (Campos desabilitados, mas lidos para o PDF)
+        schoolName: document.getElementById('schoolName').value,
+        schoolAddress: document.getElementById('schoolAddress').value, 
+        schoolPhone: document.getElementById('schoolPhone').value, 
+        schoolWebsite: document.getElementById('schoolWebsite').value, 
+        logoBase64: logoData, // Inclui a logo Base64
+
+        // Info do Aluno/Professor/Relatório
+        studentName: document.getElementById('studentName').value,
+        studentAge: document.getElementById('studentAge').value,
+        studentGrade: document.getElementById('studentGrade').value,
+        schoolYear: document.getElementById('schoolYear').value,
+        teacherName: document.getElementById('teacherName').value,
+        otherTeachers: document.getElementById('otherTeachers').value,
+        digitalSignatureText: document.getElementById('digitalSignatureText').value, 
+        
+        // Campos de Experiência
+        devEuOutroNos: document.getElementById('devEuOutroNos').value,
+        devEscutaFala: document.getElementById('devEscutaFala').value,
+        devEspacoTempo: document.getElementById('devEspacoTempo').value,
+        devCorpoGesto: document.getElementById('devCorpoGesto').value,
+        devTracosSons: document.getElementById('devTracosSons').value,
+        
+        // Observações Adicionais
+        improvements: document.getElementById('improvements').value,
+        generalObservations: document.getElementById('generalObservations').value,
+    };
+
+    return reportData;
+}
+    
+function validateForm() {
+    const requiredFields = [
+          'studentName', 'studentAge', 
+          'studentGrade', 'schoolYear', 'teacherName', 'schoolName'
+    ];
+    
+    let isValid = true;
+    for (let fieldId of requiredFields) {
+        const field = document.getElementById(fieldId);
+        field.classList.remove('is-invalid');
+        if (!field.value.trim()) {
+            field.classList.add('is-invalid');
+            isValid = false;
+        } 
+    }
+    
+    if (!isValid) {
+        alert('Por favor, preencha todos os campos obrigatórios marcados com *!');
+    }
+    
+    return isValid;
+}
+
+// CORREÇÃO CRÍTICA: LÓGICA DE FILTRAGEM E ATUALIZAÇÃO DO DISPLAY
+async function getAndCacheReports() {
+    if (!auth.currentUser) return;
+
+    let query = reportsCollection;
+    
+    // VERIFICA SE É COORDENADOR/ADMIN PARA EXECUTAR A CONSULTA COMPLETA
+    if (isCoordinator) {
+        // Coordenador: Vê todos, ordenados por nome do aluno.
+        // ATENÇÃO: Se esta consulta falhar, você precisará CRIAR um índice 'studentName' no Firebase.
+        query = query.orderBy('studentName', 'asc');
+    } else {
+        // Professor: Vê apenas os dele.
+        // FILTRO PELO ID do professor autenticado.
+        // Ordena pela data de atualização (mais recente primeiro) - Consulta simples, evita erro de índice composto.
+        query = query
+            .where('professor_id', '==', auth.currentUser.uid)
+            .orderBy('data_atualizacao', 'desc');
+    }
+    
+    try {
+        const snapshot = await query.get();
+        relatoriosCache = []; 
+        snapshot.forEach(doc => {
+            relatoriosCache.push({ id: doc.id, ...doc.data() });
+        });
+        console.log(`Relatórios carregados para o cache: ${relatoriosCache.length}`);
+        
+        // CORREÇÃO: Chama a atualização da interface AQUI após o carregamento bem-sucedido
+        updateSavedReportsDisplay(relatoriosCache);
+        
+    } catch (e) {
+        console.error("Erro ao carregar relatórios do Firestore:", e);
+        console.error("VERIFIQUE OS ÍNDICES COMPOSTOS NO FIREBASE. O erro provavelmente é devido à regra 'where' + 'orderBy'.");
+        document.getElementById('savedReportsCount').textContent = 'ERRO';
+        document.getElementById('noReportsMessage').textContent = 'Erro ao carregar relatórios. Verifique o console do navegador e os índices/regras do Firebase.';
+        document.getElementById('noReportsMessage').style.display = 'block';
+    }
+}
+
+async function saveReportToFirebase() {
+    if (!auth.currentUser || !validateForm()) {
+        return;
+    }
+
+    const reportData = getReportDataFromForm();
+    
+    // Metadados do Firebase
+    reportData.professor_id = auth.currentUser.uid; 
+    reportData.data_atualizacao = firebase.firestore.FieldValue.serverTimestamp(); // Campo usado na ordenação corrigida
+    reportData.timestamp = new Date().toLocaleString('pt-BR'); 
+
+    // Padroniza a turma
+    reportData.studentGrade = reportData.studentGrade.toUpperCase().trim(); 
+
+    let docId = document.getElementById('saveReport').dataset.id;
+
+    try {
+        if (docId && docId !== 'NEW_REPORT_ID' && docId.length > 10) {
+            // Edição
+            await reportsCollection.doc(docId).set(reportData, { merge: true });
+            alert(`Relatório do(a) aluno(a) ${reportData.studentName} atualizado com sucesso no servidor!`);
+        } else {
+            // Criação
+            const docRef = await reportsCollection.add(reportData);
+            docId = docRef.id;
+            document.getElementById('saveReport').dataset.id = docId;
+            alert(`Relatório do(a) aluno(a) ${reportData.studentName} salvo com sucesso no servidor!`);
+        }
+        
+        // Recarrega apenas os relatórios visíveis para o usuário atual e atualiza a lista
+        await getAndCacheReports();
+        
+        return docId;
+
+    } catch (e) {
+        console.error("Erro ao salvar relatório no Firebase: ", e);
+        alert("Erro ao salvar relatório. Verifique sua conexão e permissões do Firebase/Firestore.");
+    }
+}
+
+async function fillFormWithReport(report) {
+    document.getElementById('saveReport').dataset.id = report.id; 
+    
+    const currentConfig = await loadSchoolConfig();
+    document.getElementById('schoolName').value = report.schoolName || currentConfig?.schoolName || '';
+    document.getElementById('schoolAddress').value = report.schoolAddress || currentConfig?.schoolAddress || '';
+    document.getElementById('schoolPhone').value = report.schoolPhone || currentConfig?.schoolPhone || '';
+    document.getElementById('schoolWebsite').value = report.schoolWebsite || currentConfig?.schoolWebsite || '';
+    
+    document.getElementById('studentName').value = report.studentName || '';
+    document.getElementById('studentAge').value = report.studentAge || '';
+    document.getElementById('studentGrade').value = report.studentGrade || '';
+    document.getElementById('schoolYear').value = report.schoolYear || '';
+    document.getElementById('teacherName').value = report.teacherName || '';
+    document.getElementById('otherTeachers').value = report.otherTeachers || '';
+    document.getElementById('digitalSignatureText').value = report.digitalSignatureText || ''; 
+    document.getElementById('improvements').value = report.improvements || '';
+    document.getElementById('generalObservations').value = report.generalObservations || '';
+    
+    document.getElementById('devEuOutroNos').value = report.devEuOutroNos || '';
+    document.getElementById('devEscutaFala').value = report.devEscutaFala || '';
+    document.getElementById('devEspacoTempo').value = report.devEspacoTempo || '';
+    document.getElementById('devCorpoGesto').value = report.devCorpoGesto || '';
+    document.getElementById('devTracosSons').value = report.devTracosSons || '';
+    
+    if(report.logoBase64 && report.logoBase64.startsWith('data:image')) {
+        applySavedLogo({ logoBase64: report.logoBase64 });
+    } else {
+        applySavedLogo(currentConfig);
+    }
+
+    const createTabButton = document.getElementById('create-tab');
+    bootstrap.Tab.getInstance(createTabButton)?.show();
+    alert(`Relatório do(a) aluno(a) ${report.studentName} carregado para edição. Lembre-se de clicar em "Salvar Relatório" para manter as alterações.`);
+}
+
+// CORREÇÃO CRÍTICA: LÓGICA DE PERMISSÃO PARA EXCLUSÃO
+async function deleteReport(id) {
+    if (!auth.currentUser) return;
+    
+    const reportToDelete = relatoriosCache.find(r => r.id === id);
+    if (!reportToDelete) {
+        alert("Relatório não encontrado.");
+        return;
+    }
+
+    // Checagem de Permissão: Coordenador/Admin PODE OU o criador do relatório PODE.
+    const isOwner = reportToDelete.professor_id === auth.currentUser.uid;
+    
+    // Permissão negada se NÃO for coordenador E NÃO for o dono
+    if (!isCoordinator && !isOwner) {
+         alert("Permissão negada. Apenas o(a) professor(a) criador(a) ou a Coordenadoria podem excluir este relatório.");
+         return;
+    }
+    
+    if (confirm('Tem certeza que deseja EXCLUIR este relatório? Esta ação é irreversível!')) {
+        try {
+            await reportsCollection.doc(id).delete();
+            alert('Relatório excluído do Firebase com sucesso!');
+            
+            await getAndCacheReports();
+            
+            if (document.getElementById('saveReport').dataset.id === id) {
+                 clearForm();
+            }
+            
+        } catch (e) {
+            console.error("Erro ao excluir relatório no Firebase: ", e);
+            alert("Erro ao excluir relatório. Verifique sua conexão e permissões.");
+        }
+    }
+}
+
+
+function clearForm() {
+    document.getElementById('reportForm').reset();
+    document.getElementById('saveReport').dataset.id = ''; // Limpa o ID para criar novo
+    document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+    // Recarrega a configuração da escola (logo, nome, etc.)
+    loadSchoolConfig(); 
+}
+
+function updateSavedReportsDisplay(reports) {
+    const list = document.getElementById('savedReportsList');
+    const countSpan = document.getElementById('savedReportsCount');
+    const noReportsMessage = document.getElementById('noReportsMessage');
+    
+    list.innerHTML = '';
+    
+    if (reports.length === 0) {
+        countSpan.textContent = '0';
+        noReportsMessage.style.display = 'block';
+        return;
+    }
+    
+    countSpan.textContent = reports.length;
+    noReportsMessage.style.display = 'none';
+
+    reports.forEach(report => {
+        const item = document.createElement('div');
+        item.classList.add('report-item');
+        
+        // Formata a data de atualização
+        let displayDate = 'N/A';
+        if (report.data_atualizacao && report.data_atualizacao.toDate) {
+             displayDate = report.data_atualizacao.toDate().toLocaleDateString('pt-BR');
+        } else if (report.timestamp) {
+             displayDate = report.timestamp.split(',')[0]; 
+        }
+
+        // Título: Nome do Aluno e Série
+        const title = document.createElement('div');
+        title.innerHTML = `
+            <strong>${report.studentName}</strong> 
+            <span class="badge bg-secondary ms-2">${report.studentGrade}</span> 
+            <small class="text-muted d-block d-md-inline-block mt-1 mt-md-0 ms-md-2"> - Prof.: ${report.teacherName} (Atualizado em ${displayDate})</small>
+        `;
+        title.style.flexGrow = 1;
+        item.appendChild(title);
+        
+        // Botões de Ação
+        const actions = document.createElement('div');
+        actions.innerHTML = `
+            <button class="btn btn-sm btn-info me-2" onclick="fillFormWithReport(relatoriosCache.find(r => r.id === '${report.id}'))" title="Editar Relatório">
+                ✏️ Editar
+            </button>
+            <button class="btn btn-sm btn-danger" onclick="deleteReport('${report.id}')" title="Excluir Relatório">
+                🗑️
+            </button>
+        `;
+        item.appendChild(actions);
+        
+        list.appendChild(item);
+    });
+}
+
+// ==========================================================
+// 5. INICIALIZAÇÃO DA APLICAÇÃO E LISTENERS
+// ==========================================================
+
+function loadAppContent() {
+    console.log('Aplicação carregada. Permissão:', isCoordinator ? 'Coordenador' : 'Professor');
+    
+    // Carrega a configuração da escola (sempre, para preencher os campos desabilitados)
+    loadSchoolConfig();
+
+    // Carrega e exibe os relatórios salvos
+    getAndCacheReports(); 
+
+    // Adiciona Listeners
+    document.getElementById('logoutButton').addEventListener('click', () => {
+        auth.signOut().then(() => {
+            console.log("Usuário deslogado.");
+            window.location.href = 'login.html'; // Redireciona para a tela de login
+        }).catch((error) => {
+            console.error("Erro ao deslogar:", error);
+            alert("Erro ao deslogar.");
+        });
+    });
+
+    document.getElementById('logoUpload').addEventListener('change', handleLogoUpload);
+
+    // Salvar e Gerar
+    document.getElementById('saveReport').addEventListener('click', saveReportToFirebase);
+    document.getElementById('generateReport').addEventListener('click', generatePDF); // A função generatePDF deve ser implementada separadamente
+
+    // Limpar Formulário
+    document.getElementById('studentName').addEventListener('focus', () => {
+        // Se estiver editando, pergunta se deseja limpar para começar um novo
+        if (document.getElementById('saveReport').dataset.id) {
+            if(confirm('Você está editando um relatório. Deseja limpar o formulário para criar um NOVO relatório?')) {
+                clearForm();
+            }
+        }
+    });
+
+    // Configurações da Escola: Autosave para Coordenadores/Admin
+    if (isCoordinator) {
+        const schoolInputs = document.querySelectorAll('#schoolName, #schoolAddress, #schoolPhone, #schoolWebsite');
+        schoolInputs.forEach(input => {
+            input.addEventListener('change', updateSchoolConfigFromForm);
+        });
+        
+        // Listener para o botão de apagar TUDO (Coordenador)
+        document.getElementById('clearAllReports').addEventListener('click', async () => {
+            if (!isCoordinator) return;
+            if (confirm("ATENÇÃO: Você está prestes a apagar TODOS os relatórios salvos no servidor (incluindo de outros professores). Tem certeza? Esta ação é IRREVERSÍVEL!")) {
+                 if (prompt("Para confirmar, digite a palavra 'APAGARTUDO' (em maiúsculas):") === 'APAGARTUDO') {
+                     alert("Funcionalidade de exclusão em massa não implementada neste template, para evitar acidentes. Implemente com cuidado!");
+                     // Lógica real seria:
+                     // const allDocs = await reportsCollection.get();
+                     // const batch = db.batch();
+                     // allDocs.forEach(doc => batch.delete(doc.ref));
+                     // await batch.commit();
+                     // getAndCacheReports();
+                 } else {
+                     alert("Confirmação cancelada ou incorreta.");
+                 }
+            }
+        });
+    }
+
+    // Busca de Relatórios
+    document.getElementById('searchButton').addEventListener('click', () => {
+        const searchTerm = document.getElementById('searchStudent').value.toLowerCase().trim();
+        const filteredReports = relatoriosCache.filter(report => 
+            report.studentName.toLowerCase().includes(searchTerm) || 
+            report.studentGrade.toLowerCase().includes(searchTerm)
+        );
+        updateSavedReportsDisplay(filteredReports);
+    });
+
+    document.getElementById('clearSearch').addEventListener('click', () => {
+        document.getElementById('searchStudent').value = '';
+        updateSavedReportsDisplay(relatoriosCache); // Mostra todos novamente
+    });
+
+    // Listener para o clique na logo para remover, se já houver uma
+    document.querySelector('.logo-upload-box').addEventListener('click', function(e) {
+        if (!isCoordinator) return;
+        const logoPreview = document.getElementById('logoPreview');
+        // Se a logo estiver visível, permite a remoção
+        if (logoPreview.style.display !== 'none' && !document.getElementById('logoUpload').files.length) {
+            if(confirm("Deseja remover a logo salva?")) {
+                handleLogoUpload(); // Chama a função sem arquivo para limpar
+            }
+        }
+    });
+
+}
+
+// ==========================================================
+// 6. FUNÇÃO PLACEHOLDER PARA GERAÇÃO DE PDF
+// ==========================================================
+
+// Esta função deve ser aprimorada, especialmente para lidar com quebras de linha longas (textarea) e fontes.
+function generatePDF() {
+    if (!validateForm()) {
+        return;
+    }
+    
+    // Simplesmente obtém os dados e loga no console (o jspdf é complexo de implementar totalmente aqui)
+    const data = getReportDataFromForm();
+    
+    alert(`Gerando PDF para ${data.studentName}... \n (Necessário implementar a lógica completa de renderização com jsPDF)`);
+    console.log("Dados prontos para PDF:", data);
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    let y = 10;
+    
+    // Exemplo de cabeçalho
+    if (data.logoBase64) {
+        try {
+            doc.addImage(data.logoBase64, 'JPEG', 10, y, 30, 30);
+        } catch(e) {
+            console.warn("Erro ao adicionar logo ao PDF. Verifique o formato.", e);
+        }
+    }
+    
+    doc.setFontSize(16);
+    doc.text(data.schoolName, 50, y + 10);
+    doc.setFontSize(10);
+    doc.text(`Relatório Individual - ${data.schoolYear}`, 50, y + 16);
+    y += 40;
+    
+    // Exemplo de seção de dados do aluno
+    doc.setFontSize(12);
+    doc.text(`Aluno(a): ${data.studentName}`, 10, y);
+    doc.text(`Turma: ${data.studentGrade}`, 110, y);
+    y += 7;
+    doc.text(`Professor(a): ${data.teacherName}`, 10, y);
+    y += 10;
+    
+    // Seções de Campos de Experiência (Simplificado)
+    doc.setFontSize(14);
+    doc.text("3. Desenvolvimento: Campos de Experiência (BNCC)", 10, y);
+    y += 5;
+    
+    // Atenção: Esta é uma função SIMPLES de text-wrap e deve ser aprimorada
+    const drawTextareaContent = (title, content) => {
+        doc.setFontSize(12);
+        doc.text(`${title}:`, 10, y + 5);
+        doc.setFontSize(10);
+        const lines = doc.splitTextToSize(content || "Sem descrição.", 180);
+        lines.forEach(line => {
+            y += 5;
+            if (y > 280) { // Nova página se passar do limite
+                doc.addPage();
+                y = 10;
+            }
+            doc.text(line, 15, y);
+        });
+        y += 7; // Espaçamento entre seções
+    };
+
+    drawTextareaContent("O Eu, O Outro e o Nós", data.devEuOutroNos);
+    drawTextareaContent("Escuta, Fala, Pensamento e Imaginação", data.devEscutaFala);
+    drawTextareaContent("Espaço, Tempo, Quantidade, Relações e Transformações", data.devEspacoTempo);
+    drawTextareaContent("Corpo, Gesto e Movimento", data.devCorpoGesto);
+    drawTextareaContent("Traços, Sons, Cores e Formas", data.devTracosSons);
+    
+    // Observações
+    doc.setFontSize(14);
+    doc.text("4. Áreas que Necessitam de Maior Atenção (Recomendações)", 10, y);
+    drawTextareaContent("Recomendações", data.improvements);
+    
+    doc.setFontSize(14);
+    doc.text("5. Observações Gerais", 10, y);
+    drawTextareaContent("Comentários", data.generalObservations);
+
+    
+    doc.save(`Relatorio_${data.studentName.replace(/\s/g, '')}.pdf`);
+}
+
+// Inicia o listener de autenticação, que por sua vez chama loadAppContent()
+// Não é necessário chamar nenhuma função aqui fora do escopo, pois o auth.onAuthStateChanged gerencia o fluxo.
+</script>
+</body>
+</html>
