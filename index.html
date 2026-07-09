@@ -14,26 +14,68 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
-        body {
-            background-color: #f8f9fa;
+        :root {
+            --brand: #164a84;
+            --brand-dark: #0f3158;
+            --accent: #119484;
+            --surface: #ffffff;
+            --page: #f4f7fb;
+            --line: #d7e0eb;
+            --text: #1f2937;
+            --muted: #667085;
         }
-        .container {
-            max-width: 900px;
-            margin-top: 20px;
-            margin-bottom: 20px;
-            background-color: #ffffff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        body {
+            background:
+                linear-gradient(180deg, rgba(22, 74, 132, 0.08), rgba(17, 148, 132, 0.04) 280px, transparent 460px),
+                var(--page);
+            color: var(--text);
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .app-shell {
+            max-width: 1120px;
+            margin-top: 24px;
+            margin-bottom: 24px;
+            background-color: var(--surface);
+            padding: 0;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            box-shadow: 0 24px 70px rgba(31, 46, 70, 0.12);
+            overflow: hidden;
+        }
+        .app-header {
+            gap: 16px;
+            padding: 24px 28px;
+            background: linear-gradient(135deg, var(--brand-dark), var(--brand));
+            color: #ffffff;
+        }
+        .app-header h2 {
+            color: #ffffff !important;
+            font-weight: 700;
+            letter-spacing: 0;
+        }
+        .app-header .text-muted {
+            color: rgba(255, 255, 255, 0.78) !important;
         }
         .nav-tabs .nav-link {
-            font-weight: bold;
-            color: #495057;
+            font-weight: 600;
+            color: #475467;
+            border: 0;
+            border-bottom: 3px solid transparent;
+            border-radius: 0;
+            padding: 14px 18px;
         }
         .nav-tabs .nav-link.active {
-            color: #0d6efd;
-            border-color: #dee2e6 #dee2e6 #fff;
-            background-color: #fff;
+            color: var(--brand);
+            border-bottom-color: var(--accent);
+            background-color: #ffffff;
+        }
+        .nav-tabs {
+            border-bottom: 1px solid var(--line);
+            padding: 0 28px;
+            background: #fbfdff;
+        }
+        .tab-content {
+            padding: 24px 28px 0;
         }
         .form-label.required::after {
             content: " *";
@@ -43,10 +85,54 @@
         textarea {
             min-height: 120px;
             font-family: Arial, sans-serif;
+            resize: vertical;
+        }
+        .form-control,
+        .btn {
+            border-radius: 8px;
+        }
+        .form-control {
+            border-color: #cbd5e1;
+            padding: 10px 12px;
+        }
+        .form-control:focus {
+            border-color: var(--brand);
+            box-shadow: 0 0 0 0.2rem rgba(22, 74, 132, 0.12);
+        }
+        .btn {
+            font-weight: 600;
+            padding: 10px 16px;
+        }
+        .btn-primary {
+            background-color: var(--brand);
+            border-color: var(--brand);
+        }
+        .btn-primary:hover {
+            background-color: var(--brand-dark);
+            border-color: var(--brand-dark);
+        }
+        .btn-warning {
+            background-color: #f5b942;
+            border-color: #f5b942;
+            color: #1f2937;
+        }
+        .btn-danger {
+            background-color: #b42318;
+            border-color: #b42318;
+        }
+        #reportForm h5,
+        #saved-tab-pane h5 {
+            border-left: 4px solid var(--accent);
+            padding: 11px 14px;
+            background: #f6f9fc;
+            border-radius: 6px;
+            color: var(--brand-dark) !important;
+            font-size: 1rem;
+            font-weight: 700;
         }
         /* Estilo para a pré-visualização da logo */
         .logo-upload-box {
-            border: 1px dashed #ccc;
+            border: 1px dashed #8ba4c7;
             padding: 10px;
             text-align: center;
             cursor: pointer;
@@ -56,8 +142,13 @@
             align-items: center;
             justify-content: center;
             position: relative;
-            background-color: #f0f0f0;
-            border-radius: 4px;
+            background-color: #f6f9fd;
+            border-radius: 8px;
+            transition: border-color 0.2s ease, background-color 0.2s ease;
+        }
+        .logo-upload-box:hover {
+            border-color: #0d6efd;
+            background-color: #eef5ff;
         }
         .logo-preview {
             max-width: 100%;
@@ -66,15 +157,27 @@
             margin-bottom: 5px;
         }
         .logo-placeholder {
-            font-size: 30px;
+            font-size: 0;
             color: #6c757d;
+        }
+        .logo-placeholder::before {
+            content: "Logo";
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #64748b;
         }
         .report-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px;
+            padding: 14px;
             border-bottom: 1px solid #eee;
+            background: #fff;
+        }
+        .report-item:hover {
+            background: #f8fbff;
         }
         .report-item:last-child {
             border-bottom: none;
@@ -86,13 +189,133 @@
             border-radius: 4px;
             margin-top: 10px;
         }
+        .report-item {
+            gap: 12px;
+        }
+        .report-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+        .report-actions .btn {
+            margin-right: 0 !important;
+        }
+        .form-actions {
+            position: sticky;
+            bottom: 0;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.94);
+            border-top: 1px solid #e3e8ef;
+            margin: 28px -28px 0;
+            padding: 16px 28px;
+            backdrop-filter: blur(8px);
+        }
+        .teacher-note {
+            background: #f6faf9;
+            border: 1px solid #cfe6e1;
+            border-radius: 8px;
+            color: #31544e;
+            padding: 12px 14px;
+            font-size: 0.92rem;
+        }
+        .saved-toolbar {
+            background: #f8fafc;
+            border: 1px solid #e3e8ef;
+            border-radius: 8px;
+            padding: 14px;
+        }
+        .admin-panel {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: #ffffff;
+            padding: 18px;
+        }
+        .user-item {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 14px;
+            align-items: center;
+            padding: 14px;
+            border: 1px solid #e3e8ef;
+            border-radius: 8px;
+            background: #ffffff;
+            margin-bottom: 10px;
+        }
+        .user-meta {
+            color: var(--muted);
+            font-size: 0.88rem;
+            word-break: break-word;
+        }
+        .role-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: #eef5ff;
+            color: var(--brand);
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .user-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        @media (max-width: 768px) {
+            .app-shell {
+                margin: 0;
+                border-radius: 0;
+            }
+            .app-header,
+            .tab-content {
+                padding: 18px;
+            }
+            .nav-tabs {
+                padding: 0 18px;
+            }
+            .app-header,
+            .report-item {
+                align-items: stretch !important;
+                flex-direction: column;
+            }
+            .app-header .btn,
+            .report-actions .btn {
+                width: 100%;
+            }
+            .nav-tabs .nav-link {
+                font-size: 0.95rem;
+            }
+            .input-group {
+                flex-direction: column;
+            }
+            .input-group > .form-control,
+            .input-group > .btn {
+                width: 100%;
+                border-radius: 0.375rem !important;
+                margin-top: 6px;
+            }
+            .form-actions {
+                margin: 24px -18px -18px;
+                padding: 14px 18px;
+            }
+            .user-item {
+                grid-template-columns: 1fr;
+            }
+            .user-actions {
+                justify-content: stretch;
+            }
+            .user-actions .btn {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="container"> 
-    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <main class="container app-shell" style="display: none;">
+    <div class="app-header d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
         
         <div class="text-start">
             <h2 class="text-primary" style="margin-bottom: 0;">Gerador de Relatório Individual</h2>
@@ -108,14 +331,15 @@
         </button>
         
     </div>
-    <ul class="nav nav-tabs" id="myTab" role="tablist">
-      
         <ul class="nav nav-tabs" id="myTab" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="create-tab" data-bs-toggle="tab" data-bs-target="#create-tab-pane" type="button" role="tab" aria-controls="create-tab-pane" aria-selected="true">✍️ Criar Relatório</button>
+                <button class="nav-link active" id="create-tab" data-bs-toggle="tab" data-bs-target="#create-tab-pane" type="button" role="tab" aria-controls="create-tab-pane" aria-selected="true">Criar relatório</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="saved-tab" data-bs-toggle="tab" data-bs-target="#saved-tab-pane" type="button" role="tab" aria-controls="saved-tab-pane" aria-selected="false">📚 Relatórios Salvos (<span id="savedReportsCount">0</span>)</button>
+                <button class="nav-link" id="saved-tab" data-bs-toggle="tab" data-bs-target="#saved-tab-pane" type="button" role="tab" aria-controls="saved-tab-pane" aria-selected="false">Relatórios salvos (<span id="savedReportsCount">0</span>)</button>
+            </li>
+            <li class="nav-item" role="presentation" id="adminTabItem" style="display: none;">
+                <a class="nav-link" id="admin-tab" href="admin_usuarios.html">Usuários</a>
             </li>
         </ul>
 
@@ -123,30 +347,33 @@
 
             <div class="tab-pane fade show active" id="create-tab-pane" role="tabpanel" aria-labelledby="create-tab" tabindex="0">
                 <form id="reportForm">
+                    <div class="teacher-note mb-4">
+                        Preencha os dados principais, salve para continuar depois e gere o PDF quando o texto estiver revisado.
+                    </div>
                     
                     <h5 class="mt-3 mb-3 text-secondary">1. Configuração da Escola (Salva Automaticamente)</h5>
                     <div class="row mb-3">
                         <div class="col-md-4">
-                            <input type="text" class="form-control" id="schoolName" placeholder="Escola Traços e Letras" required disabled>
+                            <input type="text" class="form-control" id="schoolName" value="Escola Traços e Letras" placeholder="Escola Traços e Letras" required disabled>
                         </div>
                         <div class="col-md-4">
-                            <input type="text" class="form-control" id="schoolAddress" placeholder="Catu/Ba" required disabled>
+                            <input type="text" class="form-control" id="schoolAddress" value="Catu/BA" placeholder="Catu/Ba" required disabled>
                         </div>
                         <div class="col-md-4">
                             <div class="logo-upload-box" onclick="document.getElementById('logoUpload').click()">
                                 <input type="file" id="logoUpload" accept="image/*" style="display: none;">
                                 <img id="logoPreview" class="logo-preview" alt="Pré-visualização da Logo">
-                                <span id="logoPlaceholder" class="logo-placeholder">🖼️</span>
+                                <span id="logoPlaceholder" class="logo-placeholder"></span>
                                 <small class="text-muted" id="logoText">Logo da Escola</small>
                             </div>
                         </div>
                     </div>
                     <div class="row mb-4">
                         <div class="col-md-6">
-                            <input type="text" class="form-control" id="schoolPhone" placeholder=" (71) 98200-2432" required disabled>
+                            <input type="text" class="form-control" id="schoolPhone" value="(71) 98200-2432" placeholder=" (71) 98200-2432" required disabled>
                         </div>
                         <div class="col-md-6">
-                            <input type="text" class="form-control" id="schoolWebsite" placeholder="www.portaltracoseletras.com.br" required disabled>
+                            <input type="text" class="form-control" id="schoolWebsite" value="www.portaltracoseletras.com.br" placeholder="www.portaltracoseletras.com.br" required disabled>
                         </div>
                     </div>
 
@@ -233,9 +460,9 @@
                         <textarea class="form-control" id="generalObservations" placeholder="Comentários finais ou informações relevantes."></textarea>
                     </div>
 
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
-                        <button type="button" class="btn btn-warning btn-lg" id="saveReport" data-id="" title="Salva o relatório no servidor para edição posterior.">💾 Salvar Relatório</button>
-                        <button type="button" class="btn btn-primary btn-lg" id="generateReport" title="Gera o PDF com base nos dados do formulário.">📄 Gerar PDF</button>
+                    <div class="form-actions d-grid gap-2 d-md-flex justify-content-md-center">
+                        <button type="button" class="btn btn-warning btn-lg" id="saveReport" data-id="" title="Salva o relatório no servidor para edição posterior.">Salvar relatório</button>
+                        <button type="button" class="btn btn-primary btn-lg" id="generateReport" title="Gera o PDF com base nos dados do formulário.">Gerar PDF</button>
                     </div>
 
                 </form>
@@ -244,16 +471,16 @@
             <div class="tab-pane fade" id="saved-tab-pane" role="tabpanel" aria-labelledby="saved-tab" tabindex="0">
                 <h5 class="mt-3 mb-3 text-secondary">Relatórios Salvos no Servidor Firebase</h5>
 
-                <div class="row mb-3 align-items-center">
+                <div class="row mb-3 align-items-center saved-toolbar">
                     <div class="col-md-8">
                         <div class="input-group">
                             <input type="text" class="form-control" id="searchStudent" placeholder="Buscar por Nome do Aluno ou Série">
-                            <button class="btn btn-outline-secondary" type="button" id="searchButton">🔎 Buscar</button>
-                            <button class="btn btn-outline-secondary" type="button" id="clearSearch">❌ Limpar</button>
+                            <button class="btn btn-outline-secondary" type="button" id="searchButton">Buscar</button>
+                            <button class="btn btn-outline-secondary" type="button" id="clearSearch">Limpar</button>
                         </div>
                     </div>
                     <div class="col-md-4 text-end">
-                        <button class="btn btn-danger btn-sm" id="clearAllReports" style="display: none;" title="Apaga TODOS os relatórios salvos. Cuidado!">🚨 Apagar Tudo</button>
+                        <button class="btn btn-danger btn-sm" id="clearAllReports" style="display: none;" title="Apaga TODOS os relatórios salvos. Cuidado!">Apagar tudo</button>
                     </div>
                 </div>
 
@@ -263,9 +490,53 @@
                 <p id="noReportsMessage" class="text-center text-muted mt-4" style="display: none;">Nenhum relatório salvo ainda. Use o botão "Salvar Relatório" na aba anterior!</p>
             </div>
 
+            <div class="tab-pane fade" id="admin-tab-pane" role="tabpanel" aria-labelledby="admin-tab" tabindex="0">
+                <h5 class="mt-3 mb-3 text-secondary">Administração de acessos</h5>
+
+                <div class="teacher-note mb-4">
+                    Cadastre usuários que já possuem login no Firebase Authentication. Para promover alguém a coordenador, informe o UID do usuário.
+                </div>
+
+                <div class="admin-panel mb-4">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label for="adminUserName" class="form-label">Nome</label>
+                            <input type="text" class="form-control" id="adminUserName" placeholder="Nome do usuário">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="adminUserEmail" class="form-label">E-mail</label>
+                            <input type="email" class="form-control" id="adminUserEmail" placeholder="email@escola.com">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="adminUserUid" class="form-label">UID do Firebase</label>
+                            <input type="text" class="form-control" id="adminUserUid" placeholder="UID do Authentication">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="adminUserRole" class="form-label">Perfil</label>
+                            <select class="form-control" id="adminUserRole">
+                                <option value="professor">Professor</option>
+                                <option value="coordenador">Coordenador</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                        <div class="col-md-8 d-flex align-items-end gap-2">
+                            <button type="button" class="btn btn-primary" id="saveUserAccess">Salvar acesso</button>
+                            <button type="button" class="btn btn-outline-secondary" id="clearUserAccessForm">Limpar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">Usuários cadastrados</h6>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="refreshUsersList">Atualizar lista</button>
+                </div>
+                <div id="usersList"></div>
+                <p id="noUsersMessage" class="text-center text-muted mt-4" style="display: none;">Nenhum usuário cadastrado ainda.</p>
+            </div>
+
         </div> <p class="text-center mt-5 text-muted"><small>Desenvolvido por Nay como ferramenta de apoio pedagógico.</small></p>
 
-    </div> 
+    </main> 
 <script>
 // ==========================================================
 // 1. CONFIGURAÇÃO E INICIALIZAÇÃO DO FIREBASE
@@ -285,12 +556,24 @@ const app = firebase.initializeApp(firebaseConfig);
 const db = app.firestore();
 const auth = app.auth(); 
 const storageRef = app.storage().ref(); 
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(error => {
+    console.error('Erro ao configurar persistência de login:', error);
+});
 
 // Variáveis Globais
 let isCoordinator = false; 
 let relatoriosCache = [];
 const reportsCollection = db.collection("relatorios"); 
+const usersCollection = db.collection("usuarios");
 const configDocRef = db.collection("config").doc("school_details");
+const DEFAULT_SCHOOL_CONFIG = {
+    schoolName: 'Escola Traços e Letras',
+    schoolAddress: 'Catu/BA',
+    schoolPhone: '(71) 98200-2432',
+    schoolWebsite: 'www.portaltracoseletras.com.br',
+    logoBase64: '',
+    logoUrl: 'img/logotracos.png'
+};
 
 // Variável de Permissão (Simplificada)
 let usuarioPermissao = { tipo: 'deslogado' }; 
@@ -301,16 +584,15 @@ let usuarioPermissao = { tipo: 'deslogado' };
 // ==========================================================
 
 auth.onAuthStateChanged(user => {
-    // Usando .container aqui, mas no HTML está aninhado, 
-    // então vou usar o elemento pai que está fora do aninhamento para controle.
-    // Como você só tem um .container, vou selecionar ele.
-    const appContent = document.querySelector('.container'); 
+    // Mantem a aplicação escondida até confirmar a autenticação.
+    const appContent = document.querySelector('.app-shell'); 
     
     if (user) {
         if (appContent) appContent.style.display = 'block';
 
         // CHECAGEM CRÍTICA DE PERFIL (Para Coordenador)
-        db.collection('usuarios').doc(user.uid).get()
+        ensureUserProfile(user)
+            .then(() => usersCollection.doc(user.uid).get())
             .then(doc => {
                 const userData = doc.data();
                 usuarioPermissao = userData || { tipo: 'professor' }; // Define a permissão
@@ -330,6 +612,8 @@ auth.onAuthStateChanged(user => {
                     if (clearAllBtn) {
                         clearAllBtn.style.display = 'inline-block';
                     }
+                    const adminTabItem = document.getElementById('adminTabItem');
+                    if (adminTabItem) adminTabItem.style.display = userData.tipo === 'admin' ? 'block' : 'none';
                 } else {
                     isCoordinator = false;
                     // ESCONDE BOTÃO DE EXCLUSÃO EM MASSA para professores
@@ -337,6 +621,8 @@ auth.onAuthStateChanged(user => {
                     if (clearAllBtn) {
                         clearAllBtn.style.display = 'none';
                     }
+                    const adminTabItem = document.getElementById('adminTabItem');
+                    if (adminTabItem) adminTabItem.style.display = 'none';
                 }
                 
                 // Chamada de Inicialização da Aplicação
@@ -354,6 +640,33 @@ auth.onAuthStateChanged(user => {
         window.location.href = 'login.html';
     }
 });
+
+async function ensureUserProfile(user) {
+    if (!user) return;
+
+    const userRef = usersCollection.doc(user.uid);
+    const doc = await userRef.get();
+
+    if (!doc.exists) {
+        await userRef.set({
+            uid: user.uid,
+            email: user.email || '',
+            nome: user.displayName || user.email || 'Usuário',
+            tipo: 'professor',
+            ativo: true,
+            criado_em: firebase.firestore.FieldValue.serverTimestamp(),
+            atualizado_em: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        return;
+    }
+
+    await userRef.set({
+        uid: user.uid,
+        email: user.email || doc.data().email || '',
+        ativo: doc.data().ativo !== false,
+        atualizado_em: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+}
 
 
 // ==========================================================
@@ -377,18 +690,68 @@ async function saveSchoolConfig(schoolName, logoBase64, schoolAddress, schoolPho
     }
 }
 
+function imageUrlToDataUrl(url) {
+    return new Promise((resolve) => {
+        if (!url) {
+            resolve('');
+            return;
+        }
+
+        const image = new Image();
+        image.crossOrigin = 'anonymous';
+        image.onload = () => {
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = image.naturalWidth;
+                canvas.height = image.naturalHeight;
+                const context = canvas.getContext('2d');
+                context.drawImage(image, 0, 0);
+                resolve(canvas.toDataURL('image/png'));
+            } catch (error) {
+                console.warn('Não foi possível converter a logo padrão para o PDF:', error);
+                resolve('');
+            }
+        };
+        image.onerror = () => resolve('');
+        image.src = url;
+    });
+}
+
+async function getDefaultSchoolConfig() {
+    const logoBase64 = await imageUrlToDataUrl(DEFAULT_SCHOOL_CONFIG.logoUrl);
+    return {
+        ...DEFAULT_SCHOOL_CONFIG,
+        logoBase64: logoBase64 || DEFAULT_SCHOOL_CONFIG.logoBase64
+    };
+}
+
 async function loadSchoolConfig() {
     if (!auth.currentUser) return null; 
     try {
         const doc = await configDocRef.get();
         if (doc.exists) {
-            applySavedLogo(doc.data());
-            return doc.data();
+            const config = { ...DEFAULT_SCHOOL_CONFIG, ...doc.data() };
+            applySavedLogo(config);
+            return config;
         }
     } catch (e) {
         console.error("Erro ao carregar configurações da escola do Firebase: ", e);
     }
-    return null;
+
+    const defaultConfig = await getDefaultSchoolConfig();
+    applySavedLogo(defaultConfig);
+
+    if (isCoordinator && auth.currentUser) {
+        await saveSchoolConfig(
+            defaultConfig.schoolName,
+            defaultConfig.logoBase64,
+            defaultConfig.schoolAddress,
+            defaultConfig.schoolPhone,
+            defaultConfig.schoolWebsite
+        );
+    }
+
+    return defaultConfig;
 }
 
 function applySavedLogo(config) {
@@ -399,18 +762,24 @@ function applySavedLogo(config) {
     const schoolPhoneInput = document.getElementById('schoolPhone');
     const schoolWebsiteInput = document.getElementById('schoolWebsite');
 
-    if (config) {
-        // Atualiza os campos
-        if (config.schoolName) { schoolNameInput.value = config.schoolName; }
-        if (config.schoolAddress) { schoolAddressInput.value = config.schoolAddress; }
-        if (config.schoolPhone) { schoolPhoneInput.value = config.schoolPhone; }
-        if (config.schoolWebsite) { schoolWebsiteInput.value = config.schoolWebsite; }
+    const activeConfig = { ...DEFAULT_SCHOOL_CONFIG, ...(config || {}) };
 
-        if (config.logoBase64 && config.logoBase64.startsWith('data:image')) {
-            logoPreview.src = config.logoBase64;
+    if (activeConfig) {
+        // Atualiza os campos
+        if (activeConfig.schoolName) { schoolNameInput.value = activeConfig.schoolName; }
+        if (activeConfig.schoolAddress) { schoolAddressInput.value = activeConfig.schoolAddress; }
+        if (activeConfig.schoolPhone) { schoolPhoneInput.value = activeConfig.schoolPhone; }
+        if (activeConfig.schoolWebsite) { schoolWebsiteInput.value = activeConfig.schoolWebsite; }
+
+        const logoSource = activeConfig.logoBase64 && activeConfig.logoBase64.startsWith('data:image')
+            ? activeConfig.logoBase64
+            : activeConfig.logoUrl;
+
+        if (logoSource) {
+            logoPreview.src = logoSource;
             logoPreview.style.display = 'block';
             logoPlaceholder.style.display = 'none';
-            document.getElementById('logoText').textContent = 'Logo salva (Clique para remover)';
+            document.getElementById('logoText').textContent = isCoordinator ? 'Logo da escola (clique para alterar)' : 'Logo da escola';
             return; 
         }
     }
@@ -481,7 +850,7 @@ async function handleLogoUpload() {
 
 function getReportDataFromForm() {
     const logoPreview = document.getElementById('logoPreview');
-    const logoData = logoPreview.style.display !== 'none' && logoPreview.src.startsWith('data:image') 
+    const logoData = logoPreview.style.display !== 'none' 
                                  ? logoPreview.src 
                                  : ''; 
 
@@ -528,17 +897,21 @@ function validateForm() {
     ];
     
     let isValid = true;
+    let firstInvalidField = null;
     for (let fieldId of requiredFields) {
         const field = document.getElementById(fieldId);
         field.classList.remove('is-invalid');
         if (!field.value.trim()) {
             field.classList.add('is-invalid');
+            if (!firstInvalidField) firstInvalidField = field;
             isValid = false;
         } 
     }
     
     if (!isValid) {
         alert('Por favor, preencha todos os campos obrigatórios marcados com *!');
+        firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        firstInvalidField.focus();
     }
     
     return isValid;
@@ -578,10 +951,25 @@ async function getAndCacheReports() {
     }
 }
 
+function setActionButtonLoading(button, isLoading, loadingText) {
+    if (!button) return;
+    if (isLoading) {
+        button.dataset.originalText = button.textContent;
+        button.textContent = loadingText;
+        button.disabled = true;
+    } else {
+        button.textContent = button.dataset.originalText || button.textContent;
+        button.disabled = false;
+    }
+}
+
 async function saveReportToFirebase() {
     if (!auth.currentUser || !validateForm()) {
         return;
     }
+
+    const saveButton = document.getElementById('saveReport');
+    setActionButtonLoading(saveButton, true, 'Salvando...');
 
     const reportData = getReportDataFromForm();
     
@@ -615,6 +1003,8 @@ async function saveReportToFirebase() {
     } catch (e) {
         console.error("Erro ao salvar relatório no Firebase: ", e);
         alert("Erro ao salvar relatório. Verifique sua conexão e permissões do Firebase/Firestore.");
+    } finally {
+        setActionButtonLoading(saveButton, false);
     }
 }
 
@@ -658,9 +1048,13 @@ async function fillFormWithReport(report) {
     const targetPane = document.getElementById('create-tab-pane');
     const currentTab = document.getElementById('saved-tab');
     const currentPane = document.getElementById('saved-tab-pane');
+    const adminTab = document.getElementById('admin-tab');
+    const adminPane = document.getElementById('admin-tab-pane');
 
     if (currentTab) currentTab.classList.remove('active');
     if (currentPane) currentPane.classList.remove('active', 'show');
+    if (adminTab) adminTab.classList.remove('active');
+    if (adminPane) adminPane.classList.remove('active', 'show');
 
     if (targetTab) targetTab.classList.add('active');
     if (targetPane) targetPane.classList.add('active', 'show');
@@ -735,6 +1129,166 @@ function clearForm() {
     loadSchoolConfig(); 
 }
 
+function canManageUsers() {
+    return auth.currentUser && (usuarioPermissao.tipo === 'coordenador' || usuarioPermissao.tipo === 'admin');
+}
+
+function clearUserAccessForm() {
+    ['adminUserName', 'adminUserEmail', 'adminUserUid'].forEach(id => {
+        const field = document.getElementById(id);
+        if (field) field.value = '';
+    });
+    const role = document.getElementById('adminUserRole');
+    if (role) role.value = 'professor';
+}
+
+async function saveUserAccess() {
+    if (!canManageUsers()) {
+        alert('Permissão negada. Apenas coordenadores ou admins podem administrar acessos.');
+        return;
+    }
+
+    const uid = document.getElementById('adminUserUid').value.trim();
+    const email = document.getElementById('adminUserEmail').value.trim();
+    const nome = document.getElementById('adminUserName').value.trim();
+    const tipo = document.getElementById('adminUserRole').value;
+
+    if (!uid || !email || !nome) {
+        alert('Preencha nome, e-mail e UID do Firebase para salvar o acesso.');
+        return;
+    }
+
+    const button = document.getElementById('saveUserAccess');
+    setActionButtonLoading(button, true, 'Salvando...');
+
+    try {
+        await usersCollection.doc(uid).set({
+            uid,
+            email,
+            nome,
+            tipo,
+            ativo: true,
+            atualizado_em: firebase.firestore.FieldValue.serverTimestamp(),
+            atualizado_por: auth.currentUser.uid
+        }, { merge: true });
+
+        alert('Acesso salvo com sucesso.');
+        clearUserAccessForm();
+        await loadUsersList();
+    } catch (error) {
+        console.error('Erro ao salvar acesso:', error);
+        alert('Erro ao salvar acesso. Verifique as regras do Firebase.');
+    } finally {
+        setActionButtonLoading(button, false);
+    }
+}
+
+async function removeUserAccess(uid) {
+    if (!canManageUsers()) {
+        alert('Permissão negada. Apenas coordenadores ou admins podem administrar acessos.');
+        return;
+    }
+
+    if (uid === auth.currentUser.uid) {
+        alert('Você não pode remover o próprio acesso por segurança.');
+        return;
+    }
+
+    if (!confirm('Remover este acesso? O usuário deixará de ter perfil administrativo no sistema.')) {
+        return;
+    }
+
+    try {
+        await usersCollection.doc(uid).delete();
+        await loadUsersList();
+    } catch (error) {
+        console.error('Erro ao remover acesso:', error);
+        alert('Erro ao remover acesso. Verifique as regras do Firebase.');
+    }
+}
+
+async function loadUsersList() {
+    if (!canManageUsers()) return;
+
+    const listElement = document.getElementById('usersList');
+    const messageElement = document.getElementById('noUsersMessage');
+    if (!listElement || !messageElement) return;
+
+    listElement.innerHTML = '';
+    messageElement.style.display = 'none';
+
+    try {
+        const snapshot = await usersCollection.orderBy('nome', 'asc').get();
+
+        if (snapshot.empty) {
+            messageElement.style.display = 'block';
+            return;
+        }
+
+        snapshot.forEach(doc => {
+            const user = { uid: doc.id, ...doc.data() };
+            const item = document.createElement('div');
+            item.className = 'user-item';
+
+            const info = document.createElement('div');
+            const title = document.createElement('strong');
+            title.textContent = user.nome || user.email || user.uid;
+
+            const badge = document.createElement('span');
+            badge.className = 'role-badge ms-2';
+            badge.textContent = user.tipo || 'professor';
+
+            const meta = document.createElement('div');
+            meta.className = 'user-meta mt-1';
+            meta.textContent = `${user.email || 'E-mail não informado'} | UID: ${user.uid}`;
+
+            info.appendChild(title);
+            info.appendChild(badge);
+            info.appendChild(meta);
+
+            const actions = document.createElement('div');
+            actions.className = 'user-actions';
+
+            const editButton = document.createElement('button');
+            editButton.type = 'button';
+            editButton.className = 'btn btn-outline-secondary btn-sm';
+            editButton.textContent = 'Editar';
+            editButton.onclick = () => {
+                document.getElementById('adminUserName').value = user.nome || '';
+                document.getElementById('adminUserEmail').value = user.email || '';
+                document.getElementById('adminUserUid').value = user.uid || '';
+                document.getElementById('adminUserRole').value = user.tipo || 'professor';
+                document.getElementById('adminUserName').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            };
+
+            const removeButton = document.createElement('button');
+            removeButton.type = 'button';
+            removeButton.className = 'btn btn-outline-danger btn-sm';
+            removeButton.textContent = 'Remover';
+            removeButton.onclick = () => removeUserAccess(user.uid);
+
+            actions.appendChild(editButton);
+            actions.appendChild(removeButton);
+            item.appendChild(info);
+            item.appendChild(actions);
+            listElement.appendChild(item);
+        });
+    } catch (error) {
+        console.error('Erro ao carregar usuários:', error);
+        messageElement.textContent = 'Erro ao carregar usuários. Verifique as regras do Firebase.';
+        messageElement.style.display = 'block';
+    }
+}
+
+function normalizeText(value) {
+    return (value || '')
+        .toString()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+}
+
 function updateSavedReportsDisplay(reports) {
     const listElement = document.getElementById('savedReportsList');
     const countElement = document.getElementById('savedReportsCount');
@@ -754,23 +1308,36 @@ function updateSavedReportsDisplay(reports) {
         item.className = 'report-item';
         
         const info = document.createElement('span');
-        info.innerHTML = `<strong>${report.studentName}</strong> (${report.studentGrade}) - <small class="text-muted">${report.teacherName} (Salvo: ${report.timestamp || 'N/A'})</small>`;
+
+        const student = document.createElement('strong');
+        student.textContent = report.studentName || 'Aluno sem nome';
+
+        const details = document.createTextNode(` (${report.studentGrade || 'Turma não informada'}) - `);
+
+        const meta = document.createElement('small');
+        meta.className = 'text-muted';
+        meta.textContent = `${report.teacherName || 'Professor não informado'} (Salvo: ${report.timestamp || 'N/A'})`;
+
+        info.appendChild(student);
+        info.appendChild(details);
+        info.appendChild(meta);
         
         const actions = document.createElement('div');
+        actions.className = 'report-actions';
         
         const loadBtn = document.createElement('button');
-        loadBtn.className = 'btn btn-sm btn-info me-2';
-        loadBtn.innerHTML = '✏️ Carregar';
+        loadBtn.className = 'btn btn-sm btn-info';
+        loadBtn.textContent = 'Carregar';
         loadBtn.onclick = () => fillFormWithReport(report);
         
         const pdfBtn = document.createElement('button');
-        pdfBtn.className = 'btn btn-sm btn-primary me-2';
-        pdfBtn.innerHTML = '📄 PDF';
+        pdfBtn.className = 'btn btn-sm btn-primary';
+        pdfBtn.textContent = 'PDF';
         pdfBtn.onclick = () => generateReport(report.id);
         
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'btn btn-sm btn-danger';
-        deleteBtn.innerHTML = '🗑️ Excluir';
+        deleteBtn.textContent = 'Excluir';
         deleteBtn.onclick = () => deleteReport(report.id);
 
         actions.appendChild(loadBtn);
@@ -784,17 +1351,17 @@ function updateSavedReportsDisplay(reports) {
 }
 
 function filterReports() {
-    const searchTerm = document.getElementById('searchStudent').value.toLowerCase();
+    const searchTerm = normalizeText(document.getElementById('searchStudent').value);
     
-    if (searchTerm.trim() === '') {
+    if (searchTerm === '') {
         updateSavedReportsDisplay(relatoriosCache);
         return;
     }
 
     const filtered = relatoriosCache.filter(report => {
-        const nameMatch = report.studentName && report.studentName.toLowerCase().includes(searchTerm);
-        const gradeMatch = report.studentGrade && report.studentGrade.toLowerCase().includes(searchTerm);
-        const teacherMatch = report.teacherName && report.teacherName.toLowerCase().includes(searchTerm);
+        const nameMatch = normalizeText(report.studentName).includes(searchTerm);
+        const gradeMatch = normalizeText(report.studentGrade).includes(searchTerm);
+        const teacherMatch = normalizeText(report.teacherName).includes(searchTerm);
         return nameMatch || gradeMatch || teacherMatch;
     });
 
@@ -804,6 +1371,349 @@ function filterReports() {
 // ==========================================================
 // 5. FUNÇÃO DE GERAÇÃO DE PDF
 // ==========================================================
+
+async function generateProfessionalReportPdf(data) {
+    const generateButton = document.getElementById('generateReport');
+    setActionButtonLoading(generateButton, true, 'Gerando PDF...');
+
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
+
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const marginX = 19;
+        const contentWidth = pageWidth - (marginX * 2);
+        const footerY = pageHeight - 14;
+        const bottomLimit = pageHeight - 24;
+        const colors = {
+            ink: [31, 41, 55],
+            muted: [82, 99, 122],
+            soft: [245, 248, 252],
+            line: [190, 203, 219],
+            blue: [22, 74, 132],
+            blueSoft: [232, 240, 250],
+            teal: [17, 148, 132],
+            white: [255, 255, 255]
+        };
+        let currentY = 18;
+
+        const clean = (value, fallback = '') => {
+            const text = (value || '').toString().replace(/\s+/g, ' ').trim();
+            return text || fallback;
+        };
+        const cleanParagraph = (value) => (value || '')
+            .toString()
+            .replace(/\r\n/g, '\n')
+            .replace(/\n{3,}/g, '\n\n')
+            .trim();
+        const safeFilename = (text) => clean(text, 'relatorio')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^\w\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .slice(0, 70);
+        const imageTypeFromBase64 = (base64) => base64 && base64.includes('image/jpeg') ? 'JPEG' : 'PNG';
+        const resolveLogoForPdf = async (logoSource) => {
+            if (logoSource && logoSource.startsWith('data:image')) return logoSource;
+            if (logoSource) return await imageUrlToDataUrl(logoSource);
+            return await imageUrlToDataUrl(DEFAULT_SCHOOL_CONFIG.logoUrl);
+        };
+        const setText = (color) => doc.setTextColor(...colors[color]);
+        const setDraw = (color) => doc.setDrawColor(...colors[color]);
+        const setFill = (color) => doc.setFillColor(...colors[color]);
+
+        doc.setProperties({
+            title: `Relatório Individual - ${clean(data.studentName, 'Aluno')}`,
+            subject: 'Relatório individual de avaliação descritiva',
+            author: clean(data.schoolName, 'Escola')
+        });
+
+        const addFooter = () => {
+            const totalPages = doc.internal.getNumberOfPages();
+            for (let page = 1; page <= totalPages; page++) {
+                doc.setPage(page);
+                setDraw('line');
+                doc.setLineWidth(0.2);
+                doc.line(marginX, footerY - 4, pageWidth - marginX, footerY - 4);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8);
+                setText('muted');
+                doc.text('Documento confidencial destinado à família e profissionais autorizados.', marginX, footerY);
+                doc.text(`Página ${page} de ${totalPages}`, pageWidth - marginX, footerY, { align: 'right' });
+            }
+        };
+
+        const addContinuationHeader = () => {
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8.5);
+            setText('muted');
+            doc.text('Relatório Pedagógico Individual', marginX, 14);
+            doc.text(clean(data.studentName, 'Aluno(a)'), pageWidth - marginX, 14, { align: 'right' });
+            setDraw('line');
+            doc.setLineWidth(0.2);
+            doc.line(marginX, 18, pageWidth - marginX, 18);
+            currentY = 27;
+        };
+
+        const checkPageBreak = (requiredSpace) => {
+            if (currentY + requiredSpace > bottomLimit) {
+                doc.addPage();
+                addContinuationHeader();
+            }
+        };
+
+        const addWrappedText = (text, x, width, options = {}) => {
+            const content = cleanParagraph(text);
+            if (!content) return;
+
+            const size = options.size || 10;
+            const lineHeight = options.lineHeight || 5.2;
+            doc.setFont('helvetica', options.style || 'normal');
+            doc.setFontSize(size);
+            setText(options.color || 'ink');
+
+            content.split('\n').filter(Boolean).forEach((paragraph, paragraphIndex, paragraphs) => {
+                const lines = doc.splitTextToSize(paragraph, width);
+                lines.forEach((line) => {
+                    checkPageBreak(lineHeight + 2);
+                    doc.text(line, x, currentY);
+                    currentY += lineHeight;
+                });
+                if (paragraphIndex < paragraphs.length - 1) currentY += 2;
+            });
+        };
+
+        const addFirstHeader = async () => {
+            const logoBase64 = await resolveLogoForPdf(data.logoBase64);
+
+            const headerTop = currentY;
+            setFill('white');
+            setDraw('line');
+            doc.setLineWidth(0.25);
+            doc.roundedRect(marginX, headerTop, contentWidth, 34, 1.5, 1.5, 'FD');
+
+            if (logoBase64) {
+                try {
+                    doc.addImage(logoBase64, imageTypeFromBase64(logoBase64), marginX + 5, headerTop + 6, 30, 22);
+                } catch (error) {
+                    console.warn('Não foi possível adicionar a logo ao PDF:', error);
+                }
+            }
+
+            const textX = marginX + 42;
+            const textWidth = contentWidth - 86;
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(12);
+            setText('blue');
+            doc.text(doc.splitTextToSize(clean(data.schoolName, 'Nome da escola').toUpperCase(), textWidth), textX, headerTop + 11);
+
+            const contact = [clean(data.schoolAddress), clean(data.schoolPhone), clean(data.schoolWebsite)].filter(Boolean).join(' | ');
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8.4);
+            setText('muted');
+            doc.text(doc.splitTextToSize(contact, textWidth), textX, headerTop + 22);
+
+            setFill('blueSoft');
+            doc.roundedRect(pageWidth - marginX - 39, headerTop + 7, 34, 18, 1.2, 1.2, 'F');
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7.3);
+            setText('blue');
+            doc.text('EMITIDO EM', pageWidth - marginX - 22, headerTop + 13, { align: 'center' });
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8.3);
+            doc.text(new Date().toLocaleDateString('pt-BR'), pageWidth - marginX - 22, headerTop + 20, { align: 'center' });
+
+            setDraw('line');
+            doc.setLineWidth(0.2);
+            doc.line(marginX, headerTop + 38, pageWidth - marginX, headerTop + 38);
+            setDraw('teal');
+            doc.setLineWidth(0.7);
+            doc.line(marginX, headerTop + 39.5, marginX + 52, headerTop + 39.5);
+            currentY = headerTop + 48;
+        };
+
+        const addTitle = () => {
+            setFill('blueSoft');
+            setDraw('line');
+            doc.setLineWidth(0.2);
+            doc.roundedRect(marginX, currentY, contentWidth, 20, 1.5, 1.5, 'FD');
+            setFill('teal');
+            doc.rect(marginX, currentY, 3, 20, 'F');
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(14);
+            setText('ink');
+            doc.text('RELATÓRIO PEDAGÓGICO INDIVIDUAL', pageWidth / 2, currentY + 8, { align: 'center' });
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8.8);
+            setText('muted');
+            doc.text('Avaliação descritiva - Educação Infantil / Ensino Fundamental I', pageWidth / 2, currentY + 14.5, { align: 'center' });
+            currentY += 28;
+        };
+
+        const addInfoTable = (items) => {
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9.7);
+            setText('blue');
+            doc.text('Identificação do estudante', marginX, currentY);
+            currentY += 5;
+
+            const colGap = 8;
+            const colWidth = (contentWidth - colGap) / 2;
+            const labelHeight = 4;
+            const valueLineHeight = 4.7;
+            const rowGap = 3;
+
+            for (let i = 0; i < items.length; i += 2) {
+                const pair = items.slice(i, i + 2).map((item) => {
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(9.3);
+                    const valueLines = doc.splitTextToSize(clean(item.value, 'Não informado'), colWidth - 6);
+                    return {
+                        ...item,
+                        valueLines,
+                        height: Math.max(15, 7 + labelHeight + (valueLines.length * valueLineHeight))
+                    };
+                });
+                const rowHeight = Math.max(...pair.map(item => item.height));
+                checkPageBreak(rowHeight + rowGap);
+
+                pair.forEach((item, colIndex) => {
+                    const x = marginX + (colIndex * (colWidth + colGap));
+                    const y = currentY;
+
+                    setDraw('line');
+                    doc.setLineWidth(0.18);
+                    setFill('white');
+                    doc.roundedRect(x, y, colWidth, rowHeight, 1.2, 1.2, 'FD');
+                    setFill('soft');
+                    doc.roundedRect(x + 0.6, y + 0.6, colWidth - 1.2, 7, 1, 1, 'F');
+
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(7.3);
+                    setText('blue');
+                    doc.text(item.label.toUpperCase(), x + 3, y + 5.2);
+
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(9.3);
+                    setText('ink');
+                    doc.text(item.valueLines, x + 3, y + 11.5);
+                });
+
+                currentY += rowHeight + rowGap;
+            }
+
+            currentY += 4;
+        };
+
+        const addSectionTitle = (title) => {
+            checkPageBreak(12);
+            currentY += 3;
+            const match = title.match(/^(\d+)\.\s*(.*)$/);
+            const number = match ? match[1] : '';
+            const label = match ? match[2] : title;
+
+            if (number) {
+                setFill('blue');
+                doc.roundedRect(marginX, currentY - 5, 7, 7, 1.2, 1.2, 'F');
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(8);
+                setText('white');
+                doc.text(number, marginX + 3.5, currentY - 0.2, { align: 'center' });
+            }
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10.5);
+            setText('blue');
+            doc.text(label, marginX + (number ? 10 : 0), currentY);
+            currentY += 3;
+            setDraw('line');
+            doc.setLineWidth(0.25);
+            doc.line(marginX, currentY, pageWidth - marginX, currentY);
+            currentY += 6;
+        };
+
+        const addField = (label, text, options = {}) => {
+            const content = cleanParagraph(text);
+            if (!content && options.skipEmpty !== false) return;
+
+            checkPageBreak(16);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9.8);
+            setText('ink');
+            const labelLines = doc.splitTextToSize(label, contentWidth);
+            doc.text(labelLines, marginX, currentY);
+            currentY += (labelLines.length * 4.8) + 1;
+
+            addWrappedText(content || 'Não informado.', marginX, contentWidth, {
+                size: 10,
+                lineHeight: 5.4,
+                color: 'ink'
+            });
+            currentY += 5;
+        };
+
+        const addSignature = () => {
+            checkPageBreak(34);
+            currentY += 10;
+            const centerX = pageWidth / 2;
+            setDraw('line');
+            doc.setLineWidth(0.25);
+            doc.line(centerX - 42, currentY, centerX + 42, currentY);
+            currentY += 5;
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9.5);
+            setText('ink');
+            doc.text(clean(data.teacherName, 'Professor(a)'), centerX, currentY, { align: 'center' });
+            currentY += 5;
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8.8);
+            setText('muted');
+            doc.text(clean(data.digitalSignatureText, 'Responsável pelo registro pedagógico'), centerX, currentY, { align: 'center' });
+            currentY += 6;
+            doc.text(`${clean(data.schoolAddress, 'Local')}, ${new Date().toLocaleDateString('pt-BR')}`, centerX, currentY, { align: 'center' });
+        };
+
+        await addFirstHeader();
+        addTitle();
+        addInfoTable([
+            { label: 'Aluno(a)', value: data.studentName },
+            { label: 'Idade', value: data.studentAge },
+            { label: 'Série / Turma', value: data.studentGrade },
+            { label: 'Ano letivo / Período', value: data.schoolYear },
+            { label: 'Professor(a)', value: data.teacherName },
+            { label: 'Outros professores', value: data.otherTeachers || 'Não informado' }
+        ]);
+
+        addSectionTitle('1. Relato descritivo geral');
+        addField('Desenvolvimento: aspectos gerais e comportamentais', data.studentDevelopment, { skipEmpty: false });
+
+        addSectionTitle('2. Campos de experiência (BNCC)');
+        addField('O Eu, O Outro e o Nós', data.devEuOutroNos);
+        addField('Escuta, Fala, Pensamento e Imaginação', data.devEscutaFala);
+        addField('Espaço, Tempo, Quantidade, Relações e Transformações', data.devEspacoTempo);
+        addField('Corpo, Gesto e Movimento', data.devCorpoGesto);
+        addField('Traços, Sons, Cores e Formas', data.devTracosSons);
+
+        addSectionTitle('3. Observações e recomendações finais');
+        addField('Áreas que necessitam de maior atenção e apoio', data.improvements);
+        addField('Observações gerais', data.generalObservations);
+
+        addSignature();
+        addFooter();
+
+        doc.save(`Relatorio-${safeFilename(data.studentName)}-${safeFilename(data.studentGrade)}.pdf`);
+    } catch (error) {
+        console.error('Erro ao gerar PDF:', error);
+        alert('Não foi possível gerar o PDF agora. Verifique os dados do relatório e tente novamente.');
+    } finally {
+        setActionButtonLoading(generateButton, false);
+    }
+}
 
 async function generateReport(reportId = null) {
     let data;
@@ -820,197 +1730,370 @@ async function generateReport(reportId = null) {
         if (!validateForm()) return;
         data = getReportDataFromForm();
     }
+
+    return generateProfessionalReportPdf(data);
+
+    const generateButton = document.getElementById('generateReport');
+    setActionButtonLoading(generateButton, true, 'Gerando PDF...');
+    try {
     
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p', 'mm', 'a4'); 
-    
-    // Dimensões
+    const doc = new jsPDF('p', 'mm', 'a4');
+
     const PAGE_WIDTH = doc.internal.pageSize.getWidth();
     const PAGE_HEIGHT = doc.internal.pageSize.getHeight();
-    const MARGIN_X = 15;
-    const MARGIN_BOTTOM = 20; // Margem de segurança no final
-    const MAX_WIDTH = PAGE_WIDTH - 2 * MARGIN_X;
-    const TEXT_LINE_HEIGHT_MM = 5.5; // Altura da linha para textos longos (otimizado)
-    let currentY = 15; 
-    
-    // --- FUNÇÃO AUXILIAR PARA VERIFICAR QUEBRA DE PÁGINA ---
+    const MARGIN_X = 16;
+    const TOP_Y = 18;
+    const FOOTER_Y = PAGE_HEIGHT - 13;
+    const CONTENT_BOTTOM = PAGE_HEIGHT - 24;
+    const CONTENT_WIDTH = PAGE_WIDTH - (MARGIN_X * 2);
+    const COLORS = {
+        primary: [16, 82, 145],
+        primaryDark: [12, 54, 96],
+        accent: [20, 184, 166],
+        secondary: [45, 65, 92],
+        muted: [101, 116, 139],
+        soft: [239, 246, 255],
+        softCard: [248, 250, 252],
+        line: [203, 213, 225],
+        text: [30, 41, 59],
+        white: [255, 255, 255]
+    };
+    let currentY = TOP_Y;
+
+    const clean = (value, fallback = '') => {
+        const text = (value || '').toString().replace(/\s+/g, ' ').trim();
+        return text || fallback;
+    };
+    const cleanParagraph = (value) => (value || '').toString().replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+    const imageTypeFromBase64 = (base64) => base64 && base64.includes('image/jpeg') ? 'JPEG' : 'PNG';
+    const resolveLogoForPdf = async (logoSource) => {
+        if (logoSource && logoSource.startsWith('data:image')) return logoSource;
+        if (logoSource) return await imageUrlToDataUrl(logoSource);
+        return await imageUrlToDataUrl(DEFAULT_SCHOOL_CONFIG.logoUrl);
+    };
+    const safeFilename = (text) => clean(text, 'relatorio')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^\w\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .slice(0, 70);
+
+    const setColor = (kind) => doc.setTextColor(...COLORS[kind]);
+    const setDraw = (kind) => doc.setDrawColor(...COLORS[kind]);
+    const setFill = (kind) => doc.setFillColor(...COLORS[kind]);
+
+    doc.setProperties({
+        title: `Relatório Individual - ${clean(data.studentName, 'Aluno')}`,
+        subject: 'Relatório individual de avaliação descritiva',
+        author: clean(data.schoolName, 'Escola')
+    });
+
+    const drawPageChrome = () => {
+        setDraw('line');
+        doc.setLineWidth(0.25);
+        doc.roundedRect(9, 9, PAGE_WIDTH - 18, PAGE_HEIGHT - 18, 2, 2);
+        setFill('primary');
+        doc.rect(9, 9, 2, PAGE_HEIGHT - 18, 'F');
+        setFill('accent');
+        doc.rect(9, 9, 2, 30, 'F');
+    };
+
+    const drawContinuationHeader = () => {
+        drawPageChrome();
+        setDraw('line');
+        doc.setLineWidth(0.2);
+        doc.line(MARGIN_X, 18, PAGE_WIDTH - MARGIN_X, 18);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        setColor('muted');
+        doc.text('Relatório individual de avaliação descritiva', MARGIN_X, 14);
+        doc.text(clean(data.studentName, 'Aluno(a)'), PAGE_WIDTH - MARGIN_X, 14, { align: 'right' });
+    };
+
     const checkPageBreak = (requiredSpace) => {
-        if (currentY + requiredSpace > PAGE_HEIGHT - MARGIN_BOTTOM) {
+        if (currentY + requiredSpace > CONTENT_BOTTOM) {
             doc.addPage();
-            currentY = 15; // Inicia na margem superior da nova página
+            drawContinuationHeader();
+            currentY = 28;
         }
     };
-    
-    // --- FUNÇÃO AUXILIAR PARA ADICIONAR TÍTULOS E SUBTÍTULOS ---
-    const addTitle = (text, size, style = 'bold', spaceAfter = true) => {
-        checkPageBreak(5); // Sempre verifica antes de um título
-        doc.setFontSize(size);
-        doc.setFont('helvetica', style);
-        doc.text(text, MARGIN_X, currentY);
-        currentY += (size / 2) + (spaceAfter ? 2 : 0); // Espaçamento proporcional
-    }
 
-    // --- FUNÇÃO AUXILIAR PARA ADICIONAR TEXTO COM QUEBRA DE LINHA ---
-    const addLongText = (text, size, style = 'normal', line_height = TEXT_LINE_HEIGHT_MM) => {
-        if (!text || text.trim() === '') return;
-        doc.setFontSize(size);
-        doc.setFont('helvetica', style);
-        
-        const lines = doc.splitTextToSize(text, MAX_WIDTH);
-        const requiredHeight = lines.length * line_height;
-
-        checkPageBreak(requiredHeight + 3); // Verifica com a altura do texto + margem de 3mm
-        
-        doc.text(lines, MARGIN_X, currentY);
-        currentY += requiredHeight; 
-    };
-    
-    // --- 1. CABEÇALHO DA ESCOLA (Logo e Informações) - TUDO CENTRALIZADO ---
-    
-    if (data.logoBase64 && data.logoBase64.startsWith('data:image')) {
-        const logoSize = 30; // 30mm width
-        // Calcula a posição X para centralizar a logo
-        const logoX_centered = (PAGE_WIDTH / 2) - (logoSize / 2); 
-        doc.addImage(data.logoBase64, 'PNG', logoX_centered, 15, logoSize, logoSize); 
-        
-        currentY = 50; // Nova posição Y, abaixo da logo (15 + 30 + 5 de espaço)
-    } else {
-        currentY = 15;
-    }
-    
-    // Função para centralizar o texto
-    const centerText = (text, y, size, style = 'normal') => {
-        doc.setFontSize(size);
-        doc.setFont('helvetica', style);
-        let textWidth = doc.getStringUnitWidth(text) * doc.getFontSize() / doc.internal.scaleFactor;
-        let centerX = (PAGE_WIDTH - textWidth) / 2;
-        doc.text(text, centerX, y); 
+    const drawFooter = () => {
+        const totalPages = doc.internal.getNumberOfPages();
+        for (let page = 1; page <= totalPages; page++) {
+            doc.setPage(page);
+            drawPageChrome();
+            setDraw('line');
+            doc.setLineWidth(0.2);
+            doc.line(MARGIN_X, FOOTER_Y - 4, PAGE_WIDTH - MARGIN_X, FOOTER_Y - 4);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            setColor('muted');
+            doc.text(`${clean(data.schoolName, 'Escola')} | Emitido em ${new Date().toLocaleDateString('pt-BR')}`, MARGIN_X, FOOTER_Y);
+            doc.text(`Página ${page} de ${totalPages}`, PAGE_WIDTH - MARGIN_X, FOOTER_Y, { align: 'right' });
+        }
     };
 
-    // Linha 1: Nome da Escola
-    centerText(data.schoolName.toUpperCase(), currentY, 16, 'bold');
-    currentY += 5; 
+    const addText = (text, x, y, options = {}) => {
+        doc.setFont('helvetica', options.style || 'normal');
+        doc.setFontSize(options.size || 10);
+        setColor(options.color || 'text');
+        doc.text(clean(text), x, y, options.align ? { align: options.align } : undefined);
+    };
 
-    // Linha 2: Endereço
-    centerText(data.schoolAddress, currentY, 10, 'normal');
-    currentY += 5; 
+    const addWrappedText = (text, x, width, options = {}) => {
+        const content = cleanParagraph(text);
+        if (!content) return;
 
-    // Linha 3: Contato
-    centerText(`Tel: ${data.schoolPhone} | Web: ${data.schoolWebsite}`, currentY, 10, 'normal'); 
-    currentY += 5;
+        doc.setFont('helvetica', options.style || 'normal');
+        doc.setFontSize(options.size || 10);
+        setColor(options.color || 'text');
 
-    // Linha divisória
-    doc.line(MARGIN_X, currentY, PAGE_WIDTH - MARGIN_X, currentY); 
-    currentY += 5; // Espaço após a linha
+        const paragraphs = content.split('\n').filter(Boolean);
+        paragraphs.forEach((paragraph, paragraphIndex) => {
+            const lines = doc.splitTextToSize(paragraph, width);
+            lines.forEach(line => {
+                checkPageBreak((options.lineHeight || 5.2) + 3);
+                doc.text(line, x, currentY);
+                currentY += options.lineHeight || 5.2;
+            });
+            if (paragraphIndex < paragraphs.length - 1) currentY += 2;
+        });
+    };
 
-    // --- 2. TÍTULO E DADOS DO ALUNO (ALINHAMENTO CORRIGIDO) ---
-    
-    addTitle('RELATÓRIO INDIVIDUAL DE AVALIAÇÃO DESCRITIVA', 14, 'bold');
-    currentY += 2;
-    
-    // Definição das coordenadas X
-    const LEFT_LABEL_X = MARGIN_X;
-    const LEFT_VALUE_X = MARGIN_X + 25;
-    const RIGHT_LABEL_X = 150; 
-    const RIGHT_VALUE_X = 175; 
+    const drawFirstHeader = () => {
+        drawPageChrome();
+        setFill('soft');
+        doc.roundedRect(MARGIN_X, TOP_Y, CONTENT_WIDTH, 40, 2, 2, 'F');
+        setFill('primary');
+        doc.roundedRect(MARGIN_X, TOP_Y, CONTENT_WIDTH, 9, 2, 2, 'F');
+        doc.rect(MARGIN_X, TOP_Y + 5, CONTENT_WIDTH, 5, 'F');
+        setFill('accent');
+        doc.rect(MARGIN_X, TOP_Y + 38.5, CONTENT_WIDTH, 1.5, 'F');
 
-    // LINHA 1: ALUNO(A) e IDADE
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('ALUNO(A):', LEFT_LABEL_X, currentY);
-    doc.setFont('helvetica', 'normal');
-    doc.text(data.studentName, LEFT_VALUE_X, currentY); 
-    
-    doc.setFont('helvetica', 'bold');
-    doc.text('IDADE:', RIGHT_LABEL_X, currentY); 
-    doc.setFont('helvetica', 'normal');
-    doc.text(data.studentAge, RIGHT_VALUE_X, currentY); 
-    currentY += 5;
+        let textX = MARGIN_X + 8;
+        let availableWidth = CONTENT_WIDTH - 16;
 
-    // LINHA 2: SÉRIE/TURMA e PERÍODO
-    doc.setFont('helvetica', 'bold');
-    doc.text('SÉRIE/TURMA:', LEFT_LABEL_X, currentY);
-    doc.setFont('helvetica', 'normal');
-    doc.text(data.studentGrade, LEFT_VALUE_X, currentY);
+        if (data.logoBase64 && data.logoBase64.startsWith('data:image')) {
+            try {
+                doc.addImage(data.logoBase64, imageTypeFromBase64(data.logoBase64), MARGIN_X + 7, TOP_Y + 13, 26, 22);
+                textX = MARGIN_X + 38;
+                availableWidth = CONTENT_WIDTH - 46;
+            } catch (error) {
+                console.warn('Não foi possível adicionar a logo ao PDF:', error);
+            }
+        }
 
-    doc.setFont('helvetica', 'bold');
-    doc.text('PERÍODO:', RIGHT_LABEL_X, currentY); 
-    doc.setFont('helvetica', 'normal');
-    doc.text(data.schoolYear, RIGHT_VALUE_X, currentY); 
-    currentY += 8; // Espaço entre as informações e a próxima seção
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.5);
+        setColor('white');
+        doc.text('DOCUMENTO PEDAGÓGICO OFICIAL', MARGIN_X + 5, TOP_Y + 6);
+        doc.text(new Date().toLocaleDateString('pt-BR'), PAGE_WIDTH - MARGIN_X - 5, TOP_Y + 6, { align: 'right' });
 
-    // --- SEÇÃO 3: NOVO CAMPO - DESENVOLVIMENTO GERAL ---
-    
-    addTitle('3. Relato Descritivo Geral do Aluno', 12, 'bold');
-    addLongText(data.studentDevelopment, 10, 'normal'); 
-    currentY += 5; // Espaço após o texto
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(14);
+        setColor('primary');
+        const schoolLines = doc.splitTextToSize(clean(data.schoolName, 'Nome da escola').toUpperCase(), availableWidth);
+        doc.text(schoolLines.slice(0, 2), textX, TOP_Y + 19);
 
-    // --- SEÇÃO 4: CAMPOS DE EXPERIÊNCIA (BNCC) ---
-    
-    addTitle('4. Detalhamento por Campos de Experiência (BNCC)', 12, 'bold');
-    
-    // O Eu, O Outro e o Nós
-    addTitle('O Eu, O Outro e o Nós:', 10, 'bold', false); // Sem espaço extra
-    addLongText(data.devEuOutroNos, 10, 'normal'); 
-    currentY += 3;
-    
-    // Escuta, Fala, Pensamento e Imaginação
-    addTitle('Escuta, Fala, Pensamento e Imaginação:', 10, 'bold', false); 
-    addLongText(data.devEscutaFala, 10, 'normal'); 
-    currentY += 3;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        setColor('secondary');
+        const contact = [clean(data.schoolAddress), clean(data.schoolPhone), clean(data.schoolWebsite)].filter(Boolean).join(' | ');
+        doc.text(doc.splitTextToSize(contact, availableWidth), textX, TOP_Y + 31);
 
-    // Espaço, Tempo, Quantidade, Relações e Transformações
-    addTitle('Espaço, Tempo, Quantidade, Relações e Transformações:', 10, 'bold', false);
-    addLongText(data.devEspacoTempo, 10, 'normal'); 
-    currentY += 3;
+        currentY = TOP_Y + 52;
+    };
 
-    // Corpo, Gesto e Movimento
-    addTitle('Corpo, Gesto e Movimento:', 10, 'bold', false);
-    addLongText(data.devCorpoGesto, 10, 'normal'); 
-    currentY += 3;
+    const addDocumentTitle = () => {
+        setFill('white');
+        setDraw('line');
+        doc.roundedRect(MARGIN_X, currentY - 3, CONTENT_WIDTH, 24, 2, 2, 'FD');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(15);
+        setColor('primaryDark');
+        doc.text('RELATÓRIO INDIVIDUAL DE AVALIAÇÃO DESCRITIVA', PAGE_WIDTH / 2, currentY + 4, { align: 'center' });
+        currentY += 10;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9.5);
+        setColor('muted');
+        doc.text('Educação Infantil / Ensino Fundamental I', PAGE_WIDTH / 2, currentY, { align: 'center' });
+        currentY += 10;
+        setFill('accent');
+        doc.roundedRect(PAGE_WIDTH / 2 - 24, currentY - 4, 48, 5, 2, 2, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7);
+        setColor('white');
+        doc.text('REGISTRO DESCRITIVO', PAGE_WIDTH / 2, currentY - 0.5, { align: 'center' });
+        currentY += 9;
+    };
 
-    // Traços, Sons, Cores e Formas
-    addTitle('Traços, Sons, Cores e Formas:', 10, 'bold', false);
-    addLongText(data.devTracosSons, 10, 'normal'); 
-    currentY += 8;
+    const addInfoGrid = (items) => {
+        const colGap = 6;
+        const colWidth = (CONTENT_WIDTH - colGap) / 2;
+        const labelHeight = 4.2;
+        const valueLineHeight = 4.6;
+        const verticalPadding = 7;
+        const rows = [];
 
-    // --- SEÇÃO 5: OBSERVAÇÕES E RECOMENDAÇÕES ---
-    
-    addTitle('5. Observações e Recomendações Finais', 12, 'bold');
+        for (let i = 0; i < items.length; i += 2) {
+            const pair = items.slice(i, i + 2).map((item) => {
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9.3);
+                const valueLines = doc.splitTextToSize(clean(item.value, 'Não informado'), colWidth - 8);
+                const visibleLines = valueLines.slice(0, 4);
+                return {
+                    ...item,
+                    valueLines: visibleLines,
+                    height: Math.max(18, verticalPadding + labelHeight + (visibleLines.length * valueLineHeight))
+                };
+            });
 
-    // Área que Necessita de Maior Atenção
-    addTitle('Áreas que Necessitam de Maior Atenção e Apoio (Recomendações):', 10, 'bold', false);
-    addLongText(data.improvements, 10, 'normal'); 
-    currentY += 3;
+            rows.push({
+                items: pair,
+                height: Math.max(...pair.map(item => item.height))
+            });
+        }
 
-    // Observações Gerais
-    addTitle('Observações Gerais:', 10, 'bold', false);
-    addLongText(data.generalObservations, 10, 'normal'); 
-    currentY += 10;
+        const totalHeight = rows.reduce((sum, row) => sum + row.height, 0) + 16;
+        checkPageBreak(totalHeight);
 
-    // --- 6. ASSINATURA - CENTRALIZADA E SEM LINHA ---
-    
-    // Verifica se há espaço suficiente para a assinatura (15mm)
-    checkPageBreak(15); 
-    
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    
-    // 1. Centraliza o Nome do Professor
-    centerText(data.teacherName, currentY + 3, 10, 'normal');
-    currentY += 7; 
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        setColor('primaryDark');
+        doc.text('Identificação do relatório', MARGIN_X, currentY);
+        currentY += 5;
 
-    // 2. Centraliza a Assinatura Digital/Título
-    centerText(`Prof.: ${data.digitalSignatureText || 'Assinatura Digital'}`, currentY, 10, 'normal');
-    currentY += 7;
+        rows.forEach((row) => {
+            row.items.forEach((item, col) => {
+                const x = MARGIN_X + (col * (colWidth + colGap));
+                const y = currentY;
 
-    // 3. Centraliza o Local e Data
-    centerText(`Local e Data: ${data.schoolAddress}, ${new Date().toLocaleDateString('pt-BR')}`, currentY, 10, 'normal');
-    
-    currentY += 5; 
-    
-    // Salvar o PDF
-    doc.save(`Relatório - ${data.studentName.split(' ')[0]} - ${data.studentGrade}.pdf`);
+                setFill('softCard');
+                setDraw('line');
+                doc.setLineWidth(0.2);
+                doc.roundedRect(x, y, colWidth, row.height - 2, 1.8, 1.8, 'FD');
+                setFill('accent');
+                doc.rect(x, y, 1.5, row.height - 2, 'F');
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(7.5);
+                setColor('muted');
+                doc.text(item.label.toUpperCase(), x + 4, y + 5);
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9.3);
+                setColor('text');
+                doc.text(item.valueLines, x + 4, y + 10.5);
+            });
+
+            currentY += row.height;
+        });
+
+        currentY += 6;
+    };
+
+    const addSection = (title) => {
+        checkPageBreak(12);
+        currentY += 2;
+        setFill('primaryDark');
+        doc.roundedRect(MARGIN_X, currentY, CONTENT_WIDTH, 9, 1.5, 1.5, 'F');
+        setFill('accent');
+        doc.rect(MARGIN_X, currentY, 3, 9, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        setColor('white');
+        doc.text(title, MARGIN_X + 6, currentY + 6);
+        currentY += 14;
+    };
+
+    const addField = (label, text, options = {}) => {
+        const content = cleanParagraph(text);
+        if (!content && options.skipEmpty !== false) return;
+
+        checkPageBreak(22);
+        const fieldTop = currentY;
+        setFill('softCard');
+        setDraw('line');
+        doc.roundedRect(MARGIN_X, fieldTop - 2.5, CONTENT_WIDTH, 10, 1.5, 1.5, 'FD');
+        setFill('accent');
+        doc.rect(MARGIN_X, fieldTop - 2.5, 1.6, 10, 'F');
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        setColor('secondary');
+        const labelLines = doc.splitTextToSize(label, CONTENT_WIDTH);
+        doc.text(labelLines, MARGIN_X + 4, currentY + 3);
+        currentY += Math.max(10, (labelLines.length * 4.6) + 4);
+
+        addWrappedText(content || 'Não informado.', MARGIN_X + 4, CONTENT_WIDTH - 8, {
+            size: 10.2,
+            lineHeight: 5.4,
+            color: 'text'
+        });
+        currentY += 5;
+    };
+
+    const addSignature = () => {
+        checkPageBreak(42);
+        currentY += 6;
+        const centerX = PAGE_WIDTH / 2;
+        setFill('soft');
+        setDraw('line');
+        doc.roundedRect(MARGIN_X, currentY, CONTENT_WIDTH, 32, 2, 2, 'FD');
+        currentY += 13;
+        setDraw('line');
+        doc.setLineWidth(0.25);
+        doc.line(centerX - 42, currentY, centerX + 42, currentY);
+        currentY += 5;
+
+        addText(clean(data.teacherName, 'Professor(a)'), centerX, currentY, { size: 10.3, style: 'bold', align: 'center', color: 'text' });
+        currentY += 5;
+        addText(`Prof.: ${clean(data.digitalSignatureText, 'Assinatura digital')}`, centerX, currentY, { size: 9.2, align: 'center', color: 'muted' });
+        currentY += 6;
+        addText(`Local e data: ${clean(data.schoolAddress, 'Local')}, ${new Date().toLocaleDateString('pt-BR')}`, centerX, currentY, { size: 9.2, align: 'center', color: 'muted' });
+        currentY += 8;
+    };
+
+    data.logoBase64 = await resolveLogoForPdf(data.logoBase64);
+
+    drawFirstHeader();
+    addDocumentTitle();
+
+    addInfoGrid([
+        { label: 'Aluno(a)', value: data.studentName },
+        { label: 'Idade', value: data.studentAge },
+        { label: 'Série / Turma', value: data.studentGrade },
+        { label: 'Ano letivo / Período', value: data.schoolYear },
+        { label: 'Professor(a)', value: data.teacherName },
+        { label: 'Outros professores', value: data.otherTeachers || 'Não informado' }
+    ]);
+
+    addSection('1. Relato descritivo geral');
+    addField('Desenvolvimento: aspectos gerais e comportamentais', data.studentDevelopment, { skipEmpty: false });
+
+    addSection('2. Campos de experiência (BNCC)');
+    addField('O Eu, O Outro e o Nós', data.devEuOutroNos);
+    addField('Escuta, Fala, Pensamento e Imaginação', data.devEscutaFala);
+    addField('Espaço, Tempo, Quantidade, Relações e Transformações', data.devEspacoTempo);
+    addField('Corpo, Gesto e Movimento', data.devCorpoGesto);
+    addField('Traços, Sons, Cores e Formas', data.devTracosSons);
+
+    addSection('3. Observações e recomendações finais');
+    addField('Áreas que necessitam de maior atenção e apoio', data.improvements);
+    addField('Observações gerais', data.generalObservations);
+
+    addSignature();
+    drawFooter();
+
+    doc.save(`Relatorio-${safeFilename(data.studentName)}-${safeFilename(data.studentGrade)}.pdf`);
+    } catch (error) {
+        console.error('Erro ao gerar PDF:', error);
+        alert('Não foi possível gerar o PDF agora. Verifique os dados do relatório e tente novamente.');
+    } finally {
+        setActionButtonLoading(generateButton, false);
+    }
 }
 
 // ==========================================================
@@ -1033,6 +2116,9 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('searchStudent').value = '';
         filterReports();
     });
+    document.getElementById('saveUserAccess').addEventListener('click', saveUserAccess);
+    document.getElementById('clearUserAccessForm').addEventListener('click', clearUserAccessForm);
+    document.getElementById('refreshUsersList').addEventListener('click', loadUsersList);
     document.getElementById('logoutButton').addEventListener('click', () => {
         auth.signOut().then(() => {
             window.location.href = 'login.html';
@@ -1055,10 +2141,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const targetPane = document.getElementById('create-tab-pane');
             const currentTab = document.getElementById('saved-tab');
             const currentPane = document.getElementById('saved-tab-pane');
+            const adminTab = document.getElementById('admin-tab');
+            const adminPane = document.getElementById('admin-tab-pane');
 
             // 1. Desativa a aba atual ('Relatórios Salvos')
             if (currentTab) currentTab.classList.remove('active');
             if (currentPane) currentPane.classList.remove('active', 'show');
+            if (adminTab) adminTab.classList.remove('active');
+            if (adminPane) adminPane.classList.remove('active', 'show');
 
             // 2. Ativa a aba de destino ('Criar Relatório')
             if (targetTab) targetTab.classList.add('active');
@@ -1080,10 +2170,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const targetPane = document.getElementById('saved-tab-pane');
             const currentTab = document.getElementById('create-tab');
             const currentPane = document.getElementById('create-tab-pane');
+            const adminTab = document.getElementById('admin-tab');
+            const adminPane = document.getElementById('admin-tab-pane');
 
             // 1. Desativa a aba atual ('Criar Relatório')
             if (currentTab) currentTab.classList.remove('active');
             if (currentPane) currentPane.classList.remove('active', 'show');
+            if (adminTab) adminTab.classList.remove('active');
+            if (adminPane) adminPane.classList.remove('active', 'show');
 
             // 2. Ativa a aba de destino ('Relatórios Salvos')
             if (targetTab) targetTab.classList.add('active');
@@ -1093,7 +2187,7 @@ document.addEventListener('DOMContentLoaded', () => {
             getAndCacheReports();
         });
     }
-    
+
     // Seta o ID do save ao carregar (se vazio, é novo)
     document.getElementById('saveReport').dataset.id = '';
 });
@@ -1102,6 +2196,9 @@ document.addEventListener('DOMContentLoaded', () => {
 function loadAppContent() {
     loadSchoolConfig();
     getAndCacheReports(); // Inicializa o cache dos relatórios na primeira carga
+    if (canManageUsers()) {
+        loadUsersList();
+    }
 }
 
 
