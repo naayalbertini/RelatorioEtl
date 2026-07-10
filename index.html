@@ -192,6 +192,38 @@
         .report-item {
             gap: 12px;
         }
+        .report-group {
+            background: #fff;
+            border-bottom: 1px solid #e3e8ef;
+        }
+        .report-group:last-child {
+            border-bottom: none;
+        }
+        .report-group-header {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            background: #f4f7fb;
+            border-bottom: 1px solid #dbe4ef;
+        }
+        .report-group-title {
+            margin: 0;
+            color: #164a84;
+            font-size: 0.95rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0;
+        }
+        .report-group-count {
+            color: #667085;
+            font-size: 0.82rem;
+            white-space: nowrap;
+        }
         .report-actions {
             display: flex;
             flex-wrap: wrap;
@@ -471,15 +503,23 @@
             <div class="tab-pane fade" id="saved-tab-pane" role="tabpanel" aria-labelledby="saved-tab" tabindex="0">
                 <h5 class="mt-3 mb-3 text-secondary">Relatórios Salvos no Servidor Firebase</h5>
 
-                <div class="row mb-3 align-items-center saved-toolbar">
-                    <div class="col-md-8">
+                <div class="row mb-3 align-items-center saved-toolbar g-3">
+                    <div class="col-md-6">
                         <div class="input-group">
-                            <input type="text" class="form-control" id="searchStudent" placeholder="Buscar por Nome do Aluno ou Série">
+                            <input type="text" class="form-control" id="searchStudent" placeholder="Buscar por aluno, turma ou professor">
                             <button class="btn btn-outline-secondary" type="button" id="searchButton">Buscar</button>
                             <button class="btn btn-outline-secondary" type="button" id="clearSearch">Limpar</button>
                         </div>
                     </div>
-                    <div class="col-md-4 text-end">
+                    <div class="col-md-3">
+                        <div class="input-group">
+                            <span class="input-group-text">Ano</span>
+                            <select class="form-select" id="filterYear" aria-label="Filtrar relatórios por ano">
+                                <option value="">Todos</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-end">
                         <button class="btn btn-danger btn-sm" id="clearAllReports" style="display: none;" title="Apaga TODOS os relatórios salvos. Cuidado!">Apagar tudo</button>
                     </div>
                 </div>
@@ -941,6 +981,7 @@ async function getAndCacheReports() {
         });
         console.log(`Relatórios carregados para o cache: ${relatoriosCache.length}`);
         
+        updateYearFilterOptions(relatoriosCache);
         updateSavedReportsDisplay(relatoriosCache);
         
     } catch (e) {
@@ -1130,7 +1171,7 @@ function clearForm() {
 }
 
 function canManageUsers() {
-    return auth.currentUser && (usuarioPermissao.tipo === 'coordenador' || usuarioPermissao.tipo === 'admin');
+    return auth.currentUser && usuarioPermissao.tipo === 'admin';
 }
 
 function clearUserAccessForm() {
@@ -1289,6 +1330,57 @@ function normalizeText(value) {
         .trim();
 }
 
+function getReportYear(report) {
+    const text = (report.schoolYear || '').toString();
+    const match = text.match(/\b(20\d{2}|19\d{2})\b/);
+    return match ? match[1] : '';
+}
+
+function getReportPeriod(report) {
+    return (report.schoolYear || 'Periodo nao informado').toString().trim();
+}
+
+function getReportGrade(report) {
+    return (report.studentGrade || 'Turma nao informada').toString().trim().toUpperCase();
+}
+
+function updateYearFilterOptions(reports) {
+    const filter = document.getElementById('filterYear');
+    if (!filter) return;
+
+    const selectedValue = filter.value;
+    const years = [...new Set(reports.map(getReportYear).filter(Boolean))]
+        .sort((a, b) => b.localeCompare(a, 'pt-BR', { numeric: true }));
+
+    filter.innerHTML = '<option value="">Todos</option>';
+    years.forEach(year => {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = year;
+        filter.appendChild(option);
+    });
+
+    filter.value = years.includes(selectedValue) ? selectedValue : '';
+}
+
+function getReportGroupLabel(report) {
+    const year = getReportYear(report) || 'Ano nao informado';
+    const grade = getReportGrade(report);
+    return `${year} - ${grade}`;
+}
+
+function sortReportsForGroupedList(reports) {
+    return [...reports].sort((a, b) => {
+        const yearCompare = (getReportYear(b) || '').localeCompare(getReportYear(a) || '', 'pt-BR', { numeric: true });
+        if (yearCompare !== 0) return yearCompare;
+
+        const gradeCompare = getReportGrade(a).localeCompare(getReportGrade(b), 'pt-BR', { numeric: true });
+        if (gradeCompare !== 0) return gradeCompare;
+
+        return (a.studentName || '').toString().localeCompare((b.studentName || '').toString(), 'pt-BR', { numeric: true });
+    });
+}
+
 function updateSavedReportsDisplay(reports) {
     const listElement = document.getElementById('savedReportsList');
     const countElement = document.getElementById('savedReportsCount');
@@ -1303,7 +1395,33 @@ function updateSavedReportsDisplay(reports) {
     }
     messageElement.style.display = 'none';
 
-    reports.forEach(report => {
+    const groupedReports = sortReportsForGroupedList(reports).reduce((groups, report) => {
+        const label = getReportGroupLabel(report);
+        if (!groups.has(label)) groups.set(label, []);
+        groups.get(label).push(report);
+        return groups;
+    }, new Map());
+
+    groupedReports.forEach((groupReports, label) => {
+        const group = document.createElement('section');
+        group.className = 'report-group';
+
+        const header = document.createElement('div');
+        header.className = 'report-group-header';
+
+        const title = document.createElement('h6');
+        title.className = 'report-group-title';
+        title.textContent = label;
+
+        const count = document.createElement('span');
+        count.className = 'report-group-count';
+        count.textContent = `${groupReports.length} ${groupReports.length === 1 ? 'aluno' : 'alunos'}`;
+
+        header.appendChild(title);
+        header.appendChild(count);
+        group.appendChild(header);
+
+        groupReports.forEach(report => {
         const item = document.createElement('div');
         item.className = 'report-item';
         
@@ -1312,7 +1430,7 @@ function updateSavedReportsDisplay(reports) {
         const student = document.createElement('strong');
         student.textContent = report.studentName || 'Aluno sem nome';
 
-        const details = document.createTextNode(` (${report.studentGrade || 'Turma não informada'}) - `);
+            const details = document.createTextNode(` - ${getReportPeriod(report)} - `);
 
         const meta = document.createElement('small');
         meta.className = 'text-muted';
@@ -1346,23 +1464,28 @@ function updateSavedReportsDisplay(reports) {
         
         item.appendChild(info);
         item.appendChild(actions);
-        listElement.appendChild(item);
+            group.appendChild(item);
+        });
+
+        listElement.appendChild(group);
     });
 }
 
 function filterReports() {
     const searchTerm = normalizeText(document.getElementById('searchStudent').value);
-    
-    if (searchTerm === '') {
-        updateSavedReportsDisplay(relatoriosCache);
-        return;
-    }
+    const selectedYear = document.getElementById('filterYear')?.value || '';
 
     const filtered = relatoriosCache.filter(report => {
+        const yearMatchFilter = !selectedYear || getReportYear(report) === selectedYear;
+        if (!yearMatchFilter) return false;
+
+        if (searchTerm === '') return true;
+
         const nameMatch = normalizeText(report.studentName).includes(searchTerm);
         const gradeMatch = normalizeText(report.studentGrade).includes(searchTerm);
+        const yearMatch = normalizeText(report.schoolYear).includes(searchTerm);
         const teacherMatch = normalizeText(report.teacherName).includes(searchTerm);
-        return nameMatch || gradeMatch || teacherMatch;
+        return nameMatch || gradeMatch || yearMatch || teacherMatch;
     });
 
     updateSavedReportsDisplay(filtered);
@@ -1388,6 +1511,7 @@ async function generateProfessionalReportPdf(data) {
         const bottomLimit = pageHeight - 24;
         const colors = {
             ink: [31, 41, 55],
+            body: [0, 0, 0],
             muted: [82, 99, 122],
             soft: [245, 248, 252],
             line: [190, 203, 219],
@@ -1469,14 +1593,19 @@ async function generateProfessionalReportPdf(data) {
 
             const size = options.size || 10;
             const lineHeight = options.lineHeight || 5.2;
-            doc.setFont('helvetica', options.style || 'normal');
+            const fontStyle = options.style || 'normal';
+            const fontColor = options.color || 'body';
+            doc.setFont('times', fontStyle);
             doc.setFontSize(size);
-            setText(options.color || 'ink');
+            setText(fontColor);
 
             content.split('\n').filter(Boolean).forEach((paragraph, paragraphIndex, paragraphs) => {
                 const lines = doc.splitTextToSize(paragraph, width);
                 lines.forEach((line) => {
                     checkPageBreak(lineHeight + 2);
+                    doc.setFont('times', fontStyle);
+                    doc.setFontSize(size);
+                    setText(fontColor);
                     doc.text(line, x, currentY);
                     currentY += lineHeight;
                 });
@@ -1495,14 +1624,14 @@ async function generateProfessionalReportPdf(data) {
 
             if (logoBase64) {
                 try {
-                    doc.addImage(logoBase64, imageTypeFromBase64(logoBase64), marginX + 5, headerTop + 6, 30, 22);
+                    doc.addImage(logoBase64, imageTypeFromBase64(logoBase64), marginX + 5, headerTop + 3.2, 33, 28);
                 } catch (error) {
                     console.warn('Não foi possível adicionar a logo ao PDF:', error);
                 }
             }
 
-            const textX = marginX + 42;
-            const textWidth = contentWidth - 86;
+            const textX = marginX + 47;
+            const textWidth = contentWidth - 91;
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(12);
             setText('blue');
@@ -1568,7 +1697,7 @@ async function generateProfessionalReportPdf(data) {
 
             for (let i = 0; i < items.length; i += 2) {
                 const pair = items.slice(i, i + 2).map((item) => {
-                    doc.setFont('helvetica', 'normal');
+                    doc.setFont('times', 'normal');
                     doc.setFontSize(9.3);
                     const valueLines = doc.splitTextToSize(clean(item.value, 'Não informado'), colWidth - 6);
                     return {
@@ -1591,12 +1720,12 @@ async function generateProfessionalReportPdf(data) {
                     setFill('soft');
                     doc.roundedRect(x + 0.6, y + 0.6, colWidth - 1.2, 7, 1, 1, 'F');
 
-                    doc.setFont('helvetica', 'bold');
+                    doc.setFont('times', 'bold');
                     doc.setFontSize(7.3);
                     setText('blue');
                     doc.text(item.label.toUpperCase(), x + 3, y + 5.2);
 
-                    doc.setFont('helvetica', 'normal');
+                    doc.setFont('times', 'normal');
                     doc.setFontSize(9.3);
                     setText('ink');
                     doc.text(item.valueLines, x + 3, y + 11.5);
@@ -1618,13 +1747,13 @@ async function generateProfessionalReportPdf(data) {
             if (number) {
                 setFill('blue');
                 doc.roundedRect(marginX, currentY - 5, 7, 7, 1.2, 1.2, 'F');
-                doc.setFont('helvetica', 'bold');
+                doc.setFont('times', 'bold');
                 doc.setFontSize(8);
                 setText('white');
                 doc.text(number, marginX + 3.5, currentY - 0.2, { align: 'center' });
             }
 
-            doc.setFont('helvetica', 'bold');
+            doc.setFont('times', 'bold');
             doc.setFontSize(10.5);
             setText('blue');
             doc.text(label, marginX + (number ? 10 : 0), currentY);
@@ -1640,17 +1769,17 @@ async function generateProfessionalReportPdf(data) {
             if (!content && options.skipEmpty !== false) return;
 
             checkPageBreak(16);
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(9.8);
-            setText('ink');
+            doc.setFont('times', 'bold');
+            doc.setFontSize(12);
+            setText('body');
             const labelLines = doc.splitTextToSize(label, contentWidth);
             doc.text(labelLines, marginX, currentY);
-            currentY += (labelLines.length * 4.8) + 1;
+            currentY += (labelLines.length * 5.4) + 1.5;
 
             addWrappedText(content || 'Não informado.', marginX, contentWidth, {
-                size: 10,
-                lineHeight: 5.4,
-                color: 'ink'
+                size: 12,
+                lineHeight: 7,
+                color: 'body'
             });
             currentY += 5;
         };
@@ -1664,13 +1793,13 @@ async function generateProfessionalReportPdf(data) {
             doc.line(centerX - 42, currentY, centerX + 42, currentY);
             currentY += 5;
 
-            doc.setFont('helvetica', 'bold');
+            doc.setFont('times', 'bold');
             doc.setFontSize(9.5);
             setText('ink');
             doc.text(clean(data.teacherName, 'Professor(a)'), centerX, currentY, { align: 'center' });
             currentY += 5;
 
-            doc.setFont('helvetica', 'normal');
+            doc.setFont('times', 'normal');
             doc.setFontSize(8.8);
             setText('muted');
             doc.text(clean(data.digitalSignatureText, 'Responsável pelo registro pedagógico'), centerX, currentY, { align: 'center' });
@@ -1877,9 +2006,9 @@ async function generateReport(reportId = null) {
 
         if (data.logoBase64 && data.logoBase64.startsWith('data:image')) {
             try {
-                doc.addImage(data.logoBase64, imageTypeFromBase64(data.logoBase64), MARGIN_X + 7, TOP_Y + 13, 26, 22);
-                textX = MARGIN_X + 38;
-                availableWidth = CONTENT_WIDTH - 46;
+                doc.addImage(data.logoBase64, imageTypeFromBase64(data.logoBase64), MARGIN_X + 6, TOP_Y + 11.5, 32, 27);
+                textX = MARGIN_X + 43;
+                availableWidth = CONTENT_WIDTH - 51;
             } catch (error) {
                 console.warn('Não foi possível adicionar a logo ao PDF:', error);
             }
@@ -2114,8 +2243,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('searchButton').addEventListener('click', filterReports);
     document.getElementById('clearSearch').addEventListener('click', () => {
         document.getElementById('searchStudent').value = '';
+        document.getElementById('filterYear').value = '';
         filterReports();
     });
+    document.getElementById('filterYear').addEventListener('change', filterReports);
     document.getElementById('saveUserAccess').addEventListener('click', saveUserAccess);
     document.getElementById('clearUserAccessForm').addEventListener('click', clearUserAccessForm);
     document.getElementById('refreshUsersList').addEventListener('click', loadUsersList);
